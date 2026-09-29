@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "goree-island-mobile",
-    "slug": "goree-island-mobile",
+    "name": "Gorée Island",
+    "slug": "goree-island",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "goreeislandmobile",
-    "userInterfaceStyle": "automatic",
+    "scheme": "goreeisland",
+    "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFF4E2",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -28,9 +28,25 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#FFF4E2",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      "expo-audio",
+      "expo-localization",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Gorée Island utilise la caméra pour photographier ta CNI et prendre un selfie (tarif national de l'entrée du site).",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Gorée Island utilise ta position pour déclencher l'audio-guide devant chaque lieu de l'île."
         }
       ]
     ],

@@ -1,56 +1,61 @@
-# Welcome to your Expo app 👋
+# Gorée Island — App visiteur (React Native + Expo)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Application mobile des visiteurs de l'île de Gorée, branchée sur l'API [`goree-island-backend`](https://github.com/pds98/goree-island-backend). Elle reprend les maquettes validées : style afro-contemporain, **bleu pour la chaloupe**, **terracotta pour l'île**.
 
-## Get started
+Stack : **Expo SDK 57 · TypeScript · Expo Router · TanStack Query · expo-camera · expo-location · expo-audio**.
 
-1. Install dependencies
+---
 
+## Lancer l'app sur ton iPhone (Expo Go)
+
+1. **Démarrer l'API** (dossier `goree-island-backend`) en l'ouvrant au réseau local, avec le mode démo d'identité :
    ```bash
-   npm install
+   IDENTITE_DEMO=true uvicorn app.main:app --host 0.0.0.0 --port 8000
    ```
-
-2. Start the app
-
+2. **Trouver l'IP du Mac** : Réglages Système → Wi-Fi → Détails → Adresse IP (ex. `192.168.1.20`).
+3. **Configurer l'app** :
    ```bash
+   cp .env.example .env        # puis EXPO_PUBLIC_API_URL=http://192.168.1.20:8000
+   npm install
    npx expo start
    ```
+4. Sur l'iPhone, **même Wi-Fi que le Mac** : installe *Expo Go* depuis l'App Store, puis scanne le QR affiché dans le Terminal avec l'appareil photo.
 
-In the output, you'll find options to open the app in a
+> Pour avoir des horaires de chaloupe, crée des rotations via l'admin : `POST /api/v3/admin/rotations` dans Swagger (http://localhost:8000/docs, en-tête `X-Cle-Admin`).
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Version web (pratique pour une démo) : `npx expo start --web`. Le backend n'active pas encore le CORS, il faut donc passer par un proxy de même origine ou l'ajouter côté API.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Écrans
 
-## Get a fresh project
+| Onglet / route | Rôle |
+|---|---|
+| `(onglets)/index` | Accueil : les deux parcours, prochain départ en direct, changement de langue FR/EN/WO |
+| `(onglets)/chaloupe` | **Parcours 1** : trajet, jour, départ (retards affichés), passagers, nom + téléphone, paiement. Aucune pièce d'identité |
+| `(onglets)/ile` | **Parcours 2** : national (vérification CNI) ou international, accompagnants, pack, puis accès aux services |
+| `identite` | Photo de la CNI, puis selfie (caméra avant), puis numéro de CNI (saisi en **mode démo**, lu par OCR en production) |
+| `(onglets)/billets` | Mes billets, chaloupe / site, **disponibles hors ligne**, tirer vers le bas pour actualiser |
+| `billet/[numero]` | QR signé par coupon, alerte de retard, annonce du retour, report du billet d'entrée |
+| `circuits` · `audio-guide` | Circuits, et audio-guide déclenché par GPS (mode démo : se placer virtuellement à une étape) |
+| `packs` · `marketplace` | Packs, et réservation de guides, restaurants et hôtels en séquestre (pack Premium) |
 
-When you're ready, run:
+## Choix techniques
 
-```bash
-npm run reset-project
-```
+- **Billets hors ligne** : enregistrés dans AsyncStorage après l'achat (`src/stockage/billets.ts`). Le QR est le jeton signé Ed25519 renvoyé par l'API. Il ne contient aucune donnée personnelle, il s'affiche donc sans réseau à l'embarcadère.
+- **Heure de Dakar** : tous les horaires passent par `heureDakar()` / `dateDakar()` (UTC+0), quel que soit le fuseau du serveur.
+- **Erreurs métier** : l'API renvoie `{code, message}`, et le message s'affiche tel quel dans un bandeau.
+- **Accessibilité** : zones tactiles de 48 px au minimum, rôles et libellés ARIA sur les boutons et les QR, contraste AA.
+- **Wolof** : premier jet dans `src/i18n`, **à faire relire par un locuteur natif**.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Vérifications faites
 
-### Other setup steps
+- `npx tsc --noEmit` et `npx expo lint` : 0 erreur.
+- Build web complet (`expo export --platform web`) : 16 routes.
+- Parcours de bout en bout dans Chromium (390×844) contre l'API sur PostgreSQL : achat de la chaloupe (2 passagers, départ avec retard), puis billet QR aller et retour avec l'alerte de retard, puis achat de l'entrée internationale avec pack Premium, puis « Mes billets ». 0 erreur JavaScript, caisses cohérentes.
+- **Non testé ici** : la caméra et le GPS sur un vrai téléphone. À faire avec Expo Go.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Reste à faire
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Paiement réel : ouvrir `url_paiement` (Wave / Orange Money) quand `PAIEMENT_SIMULE=false`, puis attendre la confirmation.
+- Prestataire biométrique (OCR + test du vivant) à la place du mode démo.
+- Pistes audio réelles, coordonnées GPS relevées sur place, photos sous licence (les images actuelles sont générées par IA).
+- Passes Apple Wallet / Google Wallet, notifications push de retard.
