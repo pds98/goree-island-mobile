@@ -51,7 +51,7 @@ export default function DetailBillet() {
   const retoursGoree = rotations.data?.filter((r) => r.depart === 'Gorée') ?? [];
 
   if (!stocke) {
-    return <Ecran><EnTete titre={numero} /><Texte>Billet introuvable sur ce téléphone.</Texte></Ecran>;
+    return <Ecran><EnTete titre={numero} /><Texte>{t('billetIntrouvable')}</Texte></Ecran>;
   }
   const { billet, telephone, titulaire } = stocke;
   const couleur = estChaloupe ? couleurs.ocean : couleurs.terracotta;
@@ -59,7 +59,7 @@ export default function DetailBillet() {
   async function reporter() {
     try {
       await sauver(stocke!, await reporterBillet(billet.numero, telephone, aujourdHui(1)));
-      setMessage({ ton: 'info', texte: 'Report accepté : un nouveau QR a été émis, l\'ancien est désactivé.' });
+      setMessage({ ton: 'info', texte: t('reportAccepte') });
     } catch (e) { setMessage({ ton: 'erreur', texte: (e as ErreurApiClient).message }); }
   }
 
@@ -88,7 +88,7 @@ export default function DetailBillet() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View style={{ flex: 1 }}>
             <Texte gras style={{ color: couleur, fontSize: 12, letterSpacing: 1.2 }}>
-              {estChaloupe ? 'CHALOUPE' : 'ENTRÉE DU SITE'}
+              {estChaloupe ? t('familleChaloupe') : t('familleSite')}
             </Texte>
             <Titre taille={22}>{estChaloupe ? 'Dakar ⇄ Gorée' : titulaire}</Titre>
           </View>

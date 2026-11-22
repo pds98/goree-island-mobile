@@ -1,13 +1,16 @@
-/** Circuits et tours : Mémoire, Castel, Artistes — puis audio-guide ou guide. */
+/**
+ * Circuits et tours : en tête, la VISITE 3D de l'île ; puis les circuits
+ * (Mémoire, Castel, Culture) avec audio-guide ou guide certifié.
+ */
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { listerCircuits } from '@/api/client';
 import { Bandeau, Bouton, Carte, Ecran, EnTete, Etiquette, Texte, Titre } from '@/composants/ui';
 import { useT } from '@/i18n';
-import { couleurs } from '@/theme';
+import { couleurs, polices } from '@/theme';
 
 const PHOTOS: Record<string, number> = {
   'Mémoire': require('@/assets/images/goree/goree-maison-esclaves.jpg'),
@@ -22,6 +25,31 @@ export default function Circuits() {
   return (
     <Ecran>
       <EnTete titre={t('circuits')} />
+
+      {/* Carte vedette : visite 3D */}
+      <Pressable onPress={() => router.push('/visite-3d')} accessibilityRole="button"
+        accessibilityLabel={t('lancerVisite')}
+        style={({ pressed }) => ({ borderRadius: 24, overflow: 'hidden', height: 210,
+          transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+        <Image source={require('@/assets/images/goree/goree-hero.jpg')} contentFit="cover"
+          style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(15,46,102,0.55)' }]} />
+        <View style={{ flex: 1, padding: 18, justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Etiquette texte="3D" fond={couleurs.ocre} couleur={couleurs.encre} incline />
+            <Etiquette texte={t('demo').toUpperCase()} fond={couleurs.blanc} couleur={couleurs.ocean} />
+          </View>
+          <View style={{ gap: 6 }}>
+            <Titre taille={26} style={{ color: couleurs.blanc }}>{t('visite3dTitre')}</Titre>
+            <Texte style={{ color: couleurs.oceanClair, fontSize: 14 }}>{t('visite3dSous')}</Texte>
+            <View style={{ alignSelf: 'flex-start', marginTop: 6, paddingHorizontal: 16, paddingVertical: 10,
+              borderRadius: 22, backgroundColor: couleurs.blanc }}>
+              <Text style={{ fontFamily: polices.texteGras, color: couleurs.ocean }}>▶  {t('lancerVisite')}</Text>
+            </View>
+          </View>
+        </View>
+      </Pressable>
+
       {circuits.isError ? <Bandeau ton="erreur" texte={t('erreurReseau')} /> : null}
       {circuits.data?.map((c) => (
         <Carte key={c.id} style={{ padding: 0, overflow: 'hidden' }}>
@@ -37,7 +65,8 @@ export default function Circuits() {
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Bouton titre={t('audioGuide')} variante="ocean" style={{ flex: 1 }}
                 onPress={() => router.push({ pathname: '/audio-guide', params: { circuit: c.id } })} />
-              <Bouton titre="Avec un guide" style={{ flex: 1 }} onPress={() => router.push('/marketplace')} />
+              <Bouton titre={t('avecGuide')} style={{ flex: 1 }}
+                onPress={() => router.push({ pathname: '/marketplace', params: { type: 'GUIDE' } })} />
             </View>
           </View>
         </Carte>

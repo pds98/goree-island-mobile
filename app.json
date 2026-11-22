@@ -48,7 +48,8 @@
         {
           "locationWhenInUsePermission": "Gorée Island utilise ta position pour déclencher l'audio-guide devant chaque lieu de l'île."
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

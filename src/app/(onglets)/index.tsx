@@ -1,21 +1,20 @@
 /** Accueil : photo de l'île, puis les DEUX parcours bien séparés. */
 import { useQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { heureDakar, listerRotations } from '@/api/client';
 import { IconeBateau, IconeBillet, IconeLieu } from '@/composants/icones';
 import { Etiquette, Frise, Texte, Titre } from '@/composants/ui';
-import { useT, type Langue } from '@/i18n';
+import { SelecteurLangue } from '@/composants/SelecteurLangue';
+import { VideoAccueil } from '@/composants/VideoAccueil';
+import { useT } from '@/i18n';
 import { couleurs, espace, polices, rayon } from '@/theme';
 
-const LANGUES: Langue[] = ['fr', 'en', 'wo'];
-
 export default function Accueil() {
-  const { t, langue, setLangue } = useT();
+  const { t } = useT();
   const rotations = useQuery({ queryKey: ['rotations'], queryFn: listerRotations });
 
   // Prochain départ de Dakar, en tenant compte du retard éventuel.
@@ -28,9 +27,10 @@ export default function Accueil() {
     <View style={{ flex: 1, backgroundColor: couleurs.sable }}>
       <ScrollView bounces={false} contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={{ height: 380 }}>
-          <Image source={require('@/assets/images/goree/goree-hero.jpg')} contentFit="cover"
-            contentPosition="top" style={StyleSheet.absoluteFill}
-            accessibilityLabel="Gorée vue de la mer, maisons colorées" />
+          {/* Vagues en boucle (vidéo animée à partir de la photo), photo en repli */}
+          <VideoAccueil video={require('@/assets/videos/goree-vagues-boucle.mp4')}
+            photo={require('@/assets/images/goree/goree-hero.jpg')}
+            description="Gorée vue de la mer, maisons colorées" />
           <SafeAreaView edges={['top']} style={{ paddingHorizontal: espace.xl, gap: espace.l }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
@@ -38,12 +38,7 @@ export default function Accueil() {
                 <Text style={{ fontFamily: polices.texteGras, fontSize: 11, letterSpacing: 3,
                   color: couleurs.terracotta }}>ISLAND</Text>
               </View>
-              <Pressable accessibilityRole="button" accessibilityLabel="Changer de langue"
-                onPress={() => setLangue(LANGUES[(LANGUES.indexOf(langue) + 1) % LANGUES.length])}
-                style={{ minHeight: 44, paddingHorizontal: 16, borderRadius: 22, justifyContent: 'center',
-                  backgroundColor: couleurs.blanc }}>
-                <Text style={{ fontFamily: polices.texteGras, fontSize: 14 }}>{langue.toUpperCase()}</Text>
-              </Pressable>
+              <SelecteurLangue />
             </View>
             <Etiquette texte={t('bienvenue').toUpperCase()} fond={couleurs.bougainvillier}
               couleur={couleurs.blanc} incline />

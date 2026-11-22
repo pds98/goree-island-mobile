@@ -7,6 +7,8 @@
  */
 import { Platform } from 'react-native';
 
+import { DEMO_CIRCUITS, DEMO_PARTENAIRES } from '@/demo/donnees';
+
 import type {
   Circuit, Commande, MoyenPaiement, NomPack, Partenaire, ReponseAudio, Rotation, Trajet,
   Verification, Billet,
@@ -114,14 +116,29 @@ export const annoncerRetour = (numero: string, telephone: string, rotation_id: s
 
 // --- Sur l'île -------------------------------------------------------------------------
 
-export const listerCircuits = () => requete<Circuit[]>('/circuits');
+/**
+ * MODE DÉMO : si le serveur est injoignable (erreur réseau, statut 0), on
+ * renvoie les données locales de src/demo/donnees.ts pour que l'app reste
+ * présentable. Une vraie erreur métier (4xx/5xx) est toujours propagée.
+ */
+async function avecDemo<T>(appel: () => Promise<T>, demo: T): Promise<T> {
+  try {
+    return await appel();
+  } catch (e) {
+    if (e instanceof ErreurApiClient && e.statut === 0) return demo;
+    throw e;
+  }
+}
+
+export const listerCircuits = () => avecDemo(() => requete<Circuit[]>('/circuits'), DEMO_CIRCUITS);
 
 export const positionAudio = (p: {
   numero: string; telephone: string; lat: number; lon: number; langue: string;
 }) => requete<ReponseAudio>('/audio/position', json(p));
 
-export const listerPartenaires = (type?: Partenaire['type']) =>
-  requete<Partenaire[]>(`/partenaires${type ? `?type=${type}` : ''}`);
+export const listerPartenaires = (type?: Partenaire['type']) => avecDemo(
+  () => requete<Partenaire[]>(`/partenaires${type ? `?type=${type}` : ''}`),
+  DEMO_PARTENAIRES.filter((p) => !type || p.type === type));
 
 export const reserver = (r: {
   numero: string; telephone: string; partenaire_id: string; description: string;

@@ -1,47 +1,70 @@
 /**
- * Audio-guide géolocalisé. Le téléphone suit la position GPS ; à chaque
- * déplacement de 10 m, l'API indique si l'on est dans la zone d'une étape
- * et renvoie la piste dans la langue choisie. Conditions (vérifiées par le
- * serveur) : être entré sur l'île + pack Essentiel ou Premium.
+ * Audio-guide.
  *
- * Mode démo : des boutons placent virtuellement le visiteur à une étape,
- * pour tester sans être à Gorée.
+ * 1) MODE RÉEL (billet + backend) : le téléphone suit la position GPS ; à
+ *    chaque déplacement de 10 m, l'API indique si l'on est dans la zone d'une
+ *    étape et renvoie la piste audio dans la langue de l'app. Conditions
+ *    vérifiées par le serveur : être entré sur l'île + pack Essentiel/Premium.
+ *
+ * 2) MODE DÉMO (sans backend) : chaque lieu de src/demo/donnees.ts a une
+ *    narration écrite, lue à voix haute par la synthèse vocale du téléphone
+ *    (expo-speech) dans la langue choisie. Le wolof n'ayant pas de voix
+ *    système, il est lu en français.
  */
 import { useQuery } from '@tanstack/react-query';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { API_URL, ErreurApiClient, listerCircuits, positionAudio } from '@/api/client';
 import type { ReponseAudio } from '@/api/types';
-import { Bandeau, Bouton, Ecran, EnTete, Segment, Texte, Titre } from '@/composants/ui';
-import { useT } from '@/i18n';
+import { Bandeau, Bouton, Carte, Ecran, EnTete, Etiquette, Texte, Titre } from '@/composants/ui';
+import { LIEUX, lieuParNom, ORDRE_VISITE, traduire, type IdLieu } from '@/demo/donnees';
+import { CODE_VOIX, useT } from '@/i18n';
 import { lireBillets, type BilletStocke } from '@/stockage/billets';
-import { couleurs } from '@/theme';
+import { couleurs, polices } from '@/theme';
 
-type Langue = 'fr' | 'en' | 'wo' | 'es' | 'pt';
+const PHOTOS: Partial<Record<IdLieu, number>> = {
+  maison: require('@/assets/images/goree/goree-maison-esclaves.jpg'),
+  castel: require('@/assets/images/goree/goree-castel.jpg'),
+  artistes: require('@/assets/images/goree/goree-rue.jpg'),
+  eglise: require('@/assets/images/goree/goree-rue.jpg'),
+  mosquee: require('@/assets/images/goree/goree-hero.jpg'),
+  fort: require('@/assets/images/goree/goree-hero.jpg'),
+};
 
 export default function AudioGuide() {
-  const { t } = useT();
+  const { t, langue } = useT();
+  const params = useLocalSearchParams<{ circuit?: string; lieu?: IdLieu }>();
   const [billet, setBillet] = useState<BilletStocke | null>(null);
-  const [langue, setLangue] = useState<Langue>('fr');
   const [reponse, setReponse] = useState<ReponseAudio | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [lieuActif, setLieuActif] = useState<IdLieu>(params.lieu ?? 'maison');
+  const [enLecture, setEnLecture] = useState(false);
   const circuits = useQuery({ queryKey: ['circuits'], queryFn: listerCircuits });
 
   const lecteur = useAudioPlayer(null);
   const statut = useAudioPlayerStatus(lecteur);
+
+  // Lieux à présenter : ceux du circuit demandé, sinon tout le parcours.
+  const circuit = circuits.data?.find((c) => c.id === params.circuit);
+  const lieux: IdLieu[] = circuit
+    ? circuit.etapes.map((e) => lieuParNom(e.nom)?.id).filter((x): x is IdLieu => !!x)
+    : ORDRE_VISITE;
 
   // Le billet d'entrée du site le plus récent enregistré sur le téléphone.
   useFocusEffect(useCallback(() => {
     lireBillets().then((bs) => setBillet(
       bs.filter((b) => b.billet.famille === 'ENTREE_SITE')
         .sort((a, b) => b.billet.date_visite.localeCompare(a.billet.date_visite))[0] ?? null));
+    return () => { Speech.stop(); };             // on coupe la voix en quittant l'écran
   }, []));
 
+  // --- Mode réel : position GPS → API ---------------------------------------------
   const envoyerPosition = useCallback(async (lat: number, lon: number) => {
     if (!billet) return;
     try {
@@ -54,12 +77,13 @@ export default function AudioGuide() {
         lecteur.play();
       }
     } catch (e) {
-      setErreur((e as ErreurApiClient).message);
+      // Pas de serveur : on reste silencieusement en mode démo.
+      if ((e as ErreurApiClient).statut !== 0) setErreur((e as ErreurApiClient).message);
     }
   }, [billet, langue, lecteur]);
 
-  // Suivi GPS réel (premier plan uniquement).
   useEffect(() => {
+    if (!billet) return;
     let abonnement: Location.LocationSubscription | undefined;
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -69,44 +93,96 @@ export default function AudioGuide() {
         (pos) => envoyerPosition(pos.coords.latitude, pos.coords.longitude));
     })();
     return () => abonnement?.remove();
-  }, [envoyerPosition]);
+  }, [billet, envoyerPosition]);
+
+  // --- Mode démo : narration par synthèse vocale ----------------------------------
+  const lire = useCallback((id: IdLieu) => {
+    Speech.stop();
+    setLieuActif(id);
+    setEnLecture(true);
+    Speech.speak(traduire(LIEUX[id].narration, langue), {
+      language: CODE_VOIX[langue], rate: 0.95,
+      onDone: () => setEnLecture(false), onStopped: () => setEnLecture(false),
+      onError: () => setEnLecture(false),
+    });
+  }, [langue]);
+
+  const arreter = () => { Speech.stop(); setEnLecture(false); };
+
+  // Changer de langue pendant la lecture : on arrête pour ne pas mélanger.
+  useEffect(() => { Speech.stop(); setEnLecture(false); }, [langue]);
+
+  const lieu = LIEUX[lieuActif];
 
   return (
     <Ecran style={{ padding: 0, gap: 0 }}>
-      <Image source={require('@/assets/images/goree/goree-maison-esclaves.jpg')} contentFit="cover"
-        style={{ height: 220 }} accessibilityLabel="Cour de la Maison des Esclaves" />
+      <Image source={PHOTOS[lieuActif]} contentFit="cover" style={{ height: 220 }}
+        accessibilityLabel={traduire(lieu.nom, langue)} transition={300} />
       <View style={{ padding: 20, gap: 16 }}>
-        <EnTete surtitre={reponse?.circuit?.toUpperCase() ?? 'AUDIO-GUIDE'} titre={reponse?.etape ?? t('audioGuide')} />
+        <EnTete surtitre={(circuit?.nom ?? t('audioGuide')).toUpperCase()} titre={traduire(lieu.nom, langue)} />
 
-        {!billet ? <Bandeau ton="alerte" texte="Achète d'abord ton entrée du site (pack Essentiel ou Premium)." /> : null}
         {erreur ? <Bandeau ton="erreur" texte={erreur} /> : null}
 
-        <Segment<Langue> valeur={langue} onChange={setLangue} options={[
-          { valeur: 'fr', libelle: 'FR' }, { valeur: 'en', libelle: 'EN' }, { valeur: 'wo', libelle: 'WO' },
-          { valeur: 'es', libelle: 'ES' }, { valeur: 'pt', libelle: 'PT' },
-        ]} />
-
-        {reponse?.etape ? (
-          <View style={{ gap: 10 }}>
-            <Texte>À {reponse.distance_m} m · piste : {reponse.piste?.split('/').pop()}</Texte>
+        {/* Piste du mode réel, si le serveur en a envoyé une */}
+        {reponse?.piste ? (
+          <Carte style={{ gap: 10 }}>
+            <Texte gras>{reponse.etape}</Texte>
             <View style={{ height: 6, borderRadius: 3, backgroundColor: couleurs.bordure }}>
               <View style={{ height: 6, borderRadius: 3, backgroundColor: couleurs.terracotta,
                 width: `${statut.duration ? (100 * statut.currentTime) / statut.duration : 0}%` }} />
             </View>
-            <Bouton titre={statut.playing ? 'Pause' : 'Écouter'} variante="terracotta"
+            <Bouton titre={statut.playing ? t('pause') : t('ecouter')} variante="terracotta"
               onPress={() => (statut.playing ? lecteur.pause() : lecteur.play())} />
             {reponse.rappel_memoriel ? <Bandeau ton="sombre" texte={t('lieuMemoire')} /> : null}
-          </View>
-        ) : reponse ? <Texte>{t('aucuneEtape')}</Texte> : null}
+          </Carte>
+        ) : null}
 
-        <Titre taille={17}>{t('simulerPosition')}</Titre>
-        {circuits.data?.flatMap((c) => c.etapes).map((e) => (
-          <Bouton key={e.nom} titre={e.nom} variante="contour" desactive={!billet}
-            onPress={() => envoyerPosition(e.lat, e.lon)} />
-        ))}
-        <Texte style={{ fontSize: 12, color: couleurs.gris }}>
-          Les pistes audio sont à produire (voix, validation par des historiens) ; les coordonnées GPS sont à relever sur place.
-        </Texte>
+        {/* Lieu sélectionné : résumé + narration */}
+        <Carte style={{ gap: 12 }}>
+          <Texte style={{ fontSize: 14, lineHeight: 21 }}>{traduire(lieu.narration, langue)}</Texte>
+          {lieu.memoriel ? <Bandeau ton="sombre" texte={t('lieuMemoire')} /> : null}
+          <Bouton titre={enLecture ? `■  ${t('arreter')}` : `▶  ${t('ecouter')}`} variante="terracotta"
+            onPress={() => (enLecture ? arreter() : lire(lieuActif))} />
+        </Carte>
+
+        <Bandeau ton="info" texte={t('audioDemo')} />
+
+        {/* Liste des lieux */}
+        <View style={{ gap: 8 }}>
+          {lieux.map((id, i) => {
+            const actif = id === lieuActif;
+            return (
+              <Pressable key={id} onPress={() => lire(id)} accessibilityRole="button"
+                accessibilityState={{ selected: actif }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16,
+                  borderWidth: actif ? 2 : 1, borderColor: actif ? couleurs.terracotta : couleurs.bordure,
+                  backgroundColor: actif ? couleurs.terracottaClair : couleurs.blanc }}>
+                <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center',
+                  justifyContent: 'center', backgroundColor: actif ? couleurs.terracotta : couleurs.sableFonce }}>
+                  <Text style={{ fontFamily: polices.texteGras, color: actif ? couleurs.blanc : couleurs.encre }}>
+                    {actif && enLecture ? '♪' : i + 1}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Texte gras style={{ color: couleurs.encre }}>{traduire(LIEUX[id].nom, langue)}</Texte>
+                  <Texte style={{ fontSize: 12 }}>{traduire(LIEUX[id].resume, langue)}</Texte>
+                </View>
+                {LIEUX[id].memoriel ? <Etiquette texte="◆" fond={couleurs.encre} couleur={couleurs.blanc} /> : null}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {billet ? (
+          <>
+            <Titre taille={17}>{t('simulerPosition')}</Titre>
+            {lieux.map((id) => (
+              <Bouton key={`gps-${id}`} titre={traduire(LIEUX[id].nom, langue)} variante="contour"
+                onPress={() => envoyerPosition(LIEUX[id].lat, LIEUX[id].lon)} />
+            ))}
+          </>
+        ) : null}
+        <Texte style={{ fontSize: 12, color: couleurs.gris }}>{t('pistesAProduire')}</Texte>
       </View>
     </Ecran>
   );

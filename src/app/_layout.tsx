@@ -40,6 +40,7 @@ export default function Racine() {
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: couleurs.sable } }}>
           <Stack.Screen name="(onglets)" />
           <Stack.Screen name="identite" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="visite-3d" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         </Stack>
       </FournisseurI18n>
     </QueryClientProvider>

@@ -15,11 +15,11 @@ export default function Onglets() {
       tabBarStyle: { backgroundColor: couleurs.blanc, borderTopColor: couleurs.bordure, height: 68 },
       tabBarLabelStyle: { fontFamily: polices.texteMoyen, fontSize: 11, paddingBottom: 6 },
     }}>
-      <Tabs.Screen name="index" options={{ title: 'Accueil',
+      <Tabs.Screen name="index" options={{ title: t('ongletAccueil'),
         tabBarIcon: ({ color }) => <IconeAccueil couleur={color} /> }} />
-      <Tabs.Screen name="chaloupe" options={{ title: 'Chaloupe', tabBarActiveTintColor: couleurs.ocean,
+      <Tabs.Screen name="chaloupe" options={{ title: t('ongletChaloupe'), tabBarActiveTintColor: couleurs.ocean,
         tabBarIcon: ({ color }) => <IconeBateau couleur={color} /> }} />
-      <Tabs.Screen name="ile" options={{ title: "L'île", tabBarActiveTintColor: couleurs.terracotta,
+      <Tabs.Screen name="ile" options={{ title: t('ongletIle'), tabBarActiveTintColor: couleurs.terracotta,
         tabBarIcon: ({ color }) => <IconeLieu couleur={color} /> }} />
       <Tabs.Screen name="billets" options={{ title: t('mesBillets'),
         tabBarIcon: ({ color }) => <IconeBillet couleur={color} /> }} />

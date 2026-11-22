@@ -15,10 +15,12 @@ import type { MoyenPaiement, NomPack } from '@/api/types';
 import {
   IconeCasque, IconeCircuit, IconeCoche, IconeCouches, IconeGuide, IconeHotel, IconeResto,
 } from '@/composants/icones';
+import { Calendrier } from '@/composants/Calendrier';
+import { MoyensPaiement } from '@/composants/MoyensPaiement';
 import {
   Bandeau, Bouton, Carte, Champ, Compteur, Ecran, formaterFcfa, Frise, Segment, Texte, Titre,
 } from '@/composants/ui';
-import { useT } from '@/i18n';
+import { useT, type Cles } from '@/i18n';
 import { enregistrerBillets } from '@/stockage/billets';
 import { couleurs } from '@/theme';
 
@@ -26,10 +28,10 @@ type Nat = 'NATIONAL' | 'INTERNATIONAL';
 
 // Miroir de app/tarifs.py — VALEURS PROVISOIRES (le serveur fait foi).
 const PRIX = { NATIONAL: { adulte: 500, enfant: 200 }, INTERNATIONAL: { adulte: 3_000, enfant: 1_500 } };
-const PACKS: { niveau: NomPack; nom: string; prix: number; contenu: string }[] = [
-  { niveau: 'DECOUVERTE', nom: 'Découverte', prix: 0, contenu: 'Histoire en bref, galerie' },
-  { niveau: 'ESSENTIEL', nom: 'Essentiel', prix: 2_000, contenu: 'Audio-guide GPS 5 langues, circuits' },
-  { niveau: 'PREMIUM', nom: 'Premium Téranga', prix: 5_000, contenu: 'Guides, restos, hôtels' },
+const PACKS: { niveau: NomPack; nom: string; prix: number; contenu: Cles }[] = [
+  { niveau: 'DECOUVERTE', nom: 'Découverte', prix: 0, contenu: 'packDecouverte' },
+  { niveau: 'ESSENTIEL', nom: 'Essentiel', prix: 2_000, contenu: 'packEssentiel' },
+  { niveau: 'PREMIUM', nom: 'Premium Téranga', prix: 5_000, contenu: 'packPremium' },
 ];
 
 export default function Ile() {
@@ -99,11 +101,8 @@ export default function Ile() {
             { valeur: 'INTERNATIONAL', libelle: t('international'), sous: t('internationalSous') },
           ]} />
 
-          <Segment valeur={jour} onChange={setJour} couleur={couleurs.terracotta} options={[
-            { valeur: aujourdHui(), libelle: "Aujourd'hui" },
-            { valeur: aujourdHui(1), libelle: 'Demain' },
-            { valeur: aujourdHui(2), libelle: 'Après-demain' },
-          ]} />
+          <Calendrier valeur={jour} onChange={setJour} couleur={couleurs.terracotta}
+            libelle={t('dateVisite')} />
 
           {nat === 'NATIONAL' && (verifie ? (
             <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', padding: 12,
@@ -119,11 +118,11 @@ export default function Ile() {
 
           {nat === 'INTERNATIONAL' ? (
             <Compteur libelle={t('adultes')} valeur={adultes} max={9} onChange={setAdultes}
-              couleur={couleurs.terracotta} sous={`${formaterFcfa(PRIX.INTERNATIONAL.adulte)} / adulte`} />
+              couleur={couleurs.terracotta} sous={`${formaterFcfa(PRIX.INTERNATIONAL.adulte)} ${t('parAdulte')}`} />
           ) : null}
           <Compteur libelle={t('enfants')} valeur={enfants} max={6} onChange={setEnfants}
             couleur={couleurs.terracotta} sous={nat === 'NATIONAL'
-              ? 'Le parent titulaire doit être présent au contrôle' : `${formaterFcfa(PRIX.INTERNATIONAL.enfant)} / enfant`} />
+              ? t('parentPresent') : `${formaterFcfa(PRIX.INTERNATIONAL.enfant)} ${t('parEnfant')}`} />
 
           <Texte gras>{t('pack')}</Texte>
           <View style={{ gap: 8 }}>
@@ -137,9 +136,9 @@ export default function Ile() {
                     backgroundColor: actif ? couleurs.terracottaClair : couleurs.blanc }}>
                   <View style={{ flex: 1 }}>
                     <Texte gras style={{ color: couleurs.encre }}>{x.nom}</Texte>
-                    <Texte style={{ fontSize: 12 }}>{x.contenu}</Texte>
+                    <Texte style={{ fontSize: 12 }}>{t(x.contenu)}</Texte>
                   </View>
-                  <Texte gras>{x.prix ? formaterFcfa(x.prix) : 'Gratuit'}</Texte>
+                  <Texte gras>{x.prix ? formaterFcfa(x.prix) : t('gratuit')}</Texte>
                 </Pressable>
               );
             })}
@@ -148,10 +147,7 @@ export default function Ile() {
           <Champ libelle={t('nomPrenom')} value={nom} onChangeText={setNom} />
           <Champ libelle={t('telephone')} value={telephone} onChangeText={setTelephone}
             keyboardType="phone-pad" />
-          <Segment<MoyenPaiement> valeur={moyen} onChange={setMoyen} couleur={couleurs.terracotta} options={[
-            { valeur: 'WAVE', libelle: 'Wave' }, { valeur: 'ORANGE_MONEY', libelle: 'Orange Money' },
-            { valeur: 'CARTE', libelle: 'Carte' },
-          ]} />
+          <MoyensPaiement valeur={moyen} onChange={setMoyen} couleur={couleurs.terracotta} />
 
           {achat.error ? <Bandeau ton="erreur" texte={(achat.error as ErreurApiClient).message} /> : null}
           <Bouton titre={`${t('acheterEntree')} · ${formaterFcfa(total)}`} chargement={achat.isPending}
@@ -164,11 +160,11 @@ export default function Ile() {
             icone={<IconeCircuit couleur={couleurs.encre} />} />
           <Tuile href="/audio-guide" fond={couleurs.ocean} texte={couleurs.blanc} titre={t('audioGuide')}
             icone={<IconeCasque couleur={couleurs.blanc} />} />
-          <Tuile href="/marketplace" fond={couleurs.bougainvillier} texte={couleurs.blanc} titre={t('guides')}
+          <Tuile href="/marketplace?type=GUIDE" fond={couleurs.bougainvillier} texte={couleurs.blanc} titre={t('guides')}
             icone={<IconeGuide couleur={couleurs.blanc} />} />
-          <Tuile href="/marketplace" fond={couleurs.terracottaClair} texte={couleurs.encre}
+          <Tuile href="/marketplace?type=RESTAURANT" fond={couleurs.terracottaClair} texte={couleurs.encre}
             titre={t('restaurants')} icone={<IconeResto couleur={couleurs.terracotta} />} />
-          <Tuile href="/marketplace" fond={couleurs.vert} texte={couleurs.blanc} titre={t('hotels')}
+          <Tuile href="/marketplace?type=HOTEL" fond={couleurs.vert} texte={couleurs.blanc} titre={t('hotels')}
             icone={<IconeHotel couleur={couleurs.blanc} />} />
           <Tuile href="/packs" fond={couleurs.encre} texte={couleurs.blanc} titre={t('packs')}
             icone={<IconeCouches couleur={couleurs.ocre} />} />
@@ -179,7 +175,9 @@ export default function Ile() {
 }
 
 function Tuile({ href, fond, texte, titre, icone }: {
-  href: '/circuits' | '/audio-guide' | '/marketplace' | '/packs'; fond: string; texte: string;
+  href: '/circuits' | '/audio-guide' | '/packs'
+    | '/marketplace?type=GUIDE' | '/marketplace?type=RESTAURANT' | '/marketplace?type=HOTEL';
+  fond: string; texte: string;
   titre: string; icone: ReactNode;
 }) {
   return (

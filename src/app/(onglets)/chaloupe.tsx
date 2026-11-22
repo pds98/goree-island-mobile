@@ -12,6 +12,8 @@ import {
   acheterChaloupe, aujourdHui, dateDakar, ErreurApiClient, heureDakar, listerRotations,
 } from '@/api/client';
 import type { MoyenPaiement, Trajet } from '@/api/types';
+import { Calendrier } from '@/composants/Calendrier';
+import { MoyensPaiement } from '@/composants/MoyensPaiement';
 import {
   Bandeau, Bouton, Champ, Compteur, Ecran, Etiquette, formaterFcfa, Frise, Segment, Texte, Titre,
 } from '@/composants/ui';
@@ -36,6 +38,9 @@ export default function Chaloupe() {
   const rotations = useQuery({ queryKey: ['rotations'], queryFn: listerRotations });
   const departs = (rotations.data ?? []).filter((r) => r.depart === 'Dakar'
     && dateDakar(r.heure_prevue) === jour);
+  // Jours ayant au moins un départ publié depuis Dakar : un point dans le calendrier.
+  const joursAvecDeparts = new Set((rotations.data ?? [])
+    .filter((r) => r.depart === 'Dakar').map((r) => dateDakar(r.heure_prevue)));
 
   const achat = useMutation({
     mutationFn: () => acheterChaloupe({
@@ -73,17 +78,15 @@ export default function Chaloupe() {
           { valeur: 'ALLER_SIMPLE', libelle: t('allerSimple') },
         ]} />
 
-        <Segment valeur={jour} onChange={(j) => { setJour(j); setRotationId(null); }} options={[
-          { valeur: aujourdHui(), libelle: "Aujourd'hui" },
-          { valeur: aujourdHui(1), libelle: 'Demain' },
-          { valeur: aujourdHui(2), libelle: 'Après-demain' },
-        ]} />
+        <Calendrier valeur={jour} onChange={(j) => { setJour(j); setRotationId(null); }}
+          libelle={t('dateTraversee')} joursMarques={joursAvecDeparts}
+          legendeMarque={t('departsPublies')} />
 
         <View style={{ gap: 8 }}>
           <Texte gras>{t('departsDakar')}</Texte>
           {departs.length === 0 ? (
             <Texte style={{ fontSize: 13, color: couleurs.gris }}>
-              Horaires non publiés pour ce jour : ton billet sera valable sur tout départ de la journée.
+              {t('horairesNonPublies')}
             </Texte>
           ) : (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -110,18 +113,14 @@ export default function Chaloupe() {
         </View>
 
         <Compteur libelle={t('passagers')} valeur={passagers} min={1} max={10} onChange={setPassagers}
-          sous={`${formaterFcfa(PRIX_PAR_PASSAGER[trajet])} / pers. · ${t('tarifUnique').toLowerCase()}`} />
+          sous={`${formaterFcfa(PRIX_PAR_PASSAGER[trajet])} ${t('parPersonne')} · ${t('tarifUnique').toLowerCase()}`} />
 
         <Champ libelle={t('nomPrenom')} value={nom} onChangeText={setNom} autoComplete="name"
           textContentType="name" />
         <Champ libelle={t('telephone')} value={telephone} onChangeText={setTelephone}
           keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" />
 
-        <Segment<MoyenPaiement> valeur={moyen} onChange={setMoyen} options={[
-          { valeur: 'WAVE', libelle: 'Wave' },
-          { valeur: 'ORANGE_MONEY', libelle: 'Orange Money' },
-          { valeur: 'CARTE', libelle: 'Carte' },
-        ]} />
+        <MoyensPaiement valeur={moyen} onChange={setMoyen} />
 
         <Texte style={{ fontSize: 12, color: couleurs.gris }}>{t('aucuneIdentite')}</Texte>
 

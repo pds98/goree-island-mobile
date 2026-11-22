@@ -73,7 +73,7 @@ export default function Identite() {
                 borderWidth: 3, borderStyle: 'dashed', borderColor: couleurs.ocre }} />
             </View>
             {etape === 'selfie' ? (
-              <Bandeau ton="alerte" texte="Regarde l'objectif, visage bien éclairé. En production, un test de « vivant » (mouvement de tête) est ajouté par le prestataire biométrique." />
+              <Bandeau ton="alerte" texte={t('conseilSelfie')} />
             ) : null}
             <Bouton titre={t('prendrePhoto')} variante="terracotta" onPress={photographier} />
           </View>
@@ -88,7 +88,7 @@ export default function Identite() {
           </View>
           <Bouton titre={t('recommencer')} variante="contour"
             onPress={() => { setUriCni(null); setUriSelfie(null); setEtape('cni'); }} />
-          <Champ libelle="Nom tel qu'écrit sur la CNI" value={nom} onChangeText={setNom} />
+          <Champ libelle={t('nomSurCni')} value={nom} onChangeText={setNom} />
           <Champ libelle={t('numeroCni')} value={numero} onChangeText={(v) => setNumero(v.replace(/\D/g, ''))}
             keyboardType="number-pad" maxLength={17} />
           <Texte style={{ fontSize: 12, color: couleurs.gris }}>

@@ -78,6 +78,13 @@ export interface Partenaire {
   nom: string;
   langues: string | null;
   licence_verifiee: boolean;
+  // --- Champs optionnels (affichage enrichi ; fournis par les données de démo,
+  //     à ajouter au schéma backend quand il les exposera) ---
+  demo?: boolean;          // partenaire fictif de démonstration
+  description?: string;
+  note?: number;           // moyenne des avis vérifiés, sur 5
+  avis?: number;           // nombre d'avis vérifiés
+  tarif?: string;          // libellé de prix (« 15 000 FCFA · 2 h »)
 }
 
 /** Erreur métier renvoyée par l'API : `code` stable, `message` lisible. */

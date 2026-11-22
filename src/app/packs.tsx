@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import type { NomPack } from '@/api/types';
 import { IconeCoche } from '@/composants/icones';
 import { Bouton, Ecran, EnTete, Etiquette, formaterFcfa, Frise, Texte, Titre } from '@/composants/ui';
+import { useT } from '@/i18n';
 import { couleurs } from '@/theme';
 
 const PACKS: { niveau: NomPack; nom: string; prix: number; fond: string; texte: string;
@@ -19,10 +20,11 @@ const PACKS: { niveau: NomPack; nom: string; prix: number; fond: string; texte: 
 ];
 
 export default function Packs() {
+  const { t } = useT();
   return (
     <Ecran>
-      <EnTete titre="Enrichis ta visite" />
-      <Texte>{"Les packs s'ajoutent au billet d'entrée du site. Prix provisoires."}</Texte>
+      <EnTete titre={t('enrichisVisite')} />
+      <Texte>{t('packsExplication')}</Texte>
       {PACKS.map((p) => (
         <View key={p.niveau} style={{ backgroundColor: p.fond, borderRadius: 22, overflow: 'hidden',
           borderWidth: p.niveau === 'DECOUVERTE' ? 1 : 0, borderColor: couleurs.bordure }}>
@@ -30,7 +32,7 @@ export default function Packs() {
           <View style={{ padding: 16, gap: 10 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Titre taille={22} style={{ color: p.texte }}>{p.nom}</Titre>
-              {p.niveau === 'PREMIUM' ? <Etiquette texte="LE PLUS COMPLET" incline /> : null}
+              {p.niveau === 'PREMIUM' ? <Etiquette texte={t('plusComplet')} incline /> : null}
             </View>
             {p.contenu.map((c) => (
               <View key={c} style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
