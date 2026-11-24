@@ -88,3 +88,10 @@ export const IconePersonne = ({ couleur, taille = 22 }: P) => (
     <Circle cx={12} cy={8} r={4} /><Path d="M4 21a8 8 0 0116 0" />
   </Svg>
 );
+
+export const IconeAppareil = ({ couleur, taille = 24 }: P) => (
+  <Svg width={taille} height={taille} viewBox="0 0 24 24" fill="none" stroke={couleur} strokeWidth={1.8}
+    strokeLinecap="round" strokeLinejoin="round">
+    <Path d="M4 8h3l2-3h6l2 3h3v11H4z" /><Circle cx={12} cy={13} r={3.5} />
+  </Svg>
+);

@@ -13,7 +13,7 @@ import { Pressable, View } from 'react-native';
 import { acheterEntreeSite, aujourdHui, ErreurApiClient } from '@/api/client';
 import type { MoyenPaiement, NomPack } from '@/api/types';
 import {
-  IconeCasque, IconeCircuit, IconeCoche, IconeCouches, IconeGuide, IconeHotel, IconeResto,
+  IconeCasque, IconeCircuit, IconeCoche, IconeCouches, IconeGuide, IconeHotel, IconeResto, IconeAppareil,
 } from '@/composants/icones';
 import { Calendrier, libelleDate } from '@/composants/Calendrier';
 import { FeuilleConfirmation } from '@/composants/FeuilleConfirmation';
@@ -199,6 +199,22 @@ export default function Ile() {
           <Tuile href="/packs" fond={couleurs.encre} texte={couleurs.blanc} titre={t('packs')}
             icone={<IconeCouches couleur={couleurs.ocre} />} />
         </View>
+
+        {/* Gorée Moments : photo signée Gorée, partage en un geste */}
+        <Link href="/moments" asChild>
+          <Pressable accessibilityRole="link" style={{ flexDirection: 'row', alignItems: 'center',
+            gap: 14, padding: 16, borderRadius: 22, backgroundColor: couleurs.encre }}>
+            <View style={{ width: 50, height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: couleurs.ocre }}>
+              <IconeAppareil couleur={couleurs.encre} taille={26} />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Titre taille={18} style={{ color: couleurs.blanc }}>Gorée Moments</Titre>
+              <Texte style={{ color: couleurs.sable, fontSize: 13 }}>{t('momentsSous')}</Texte>
+            </View>
+            <Texte style={{ color: couleurs.ocre, fontSize: 20 }}>›</Texte>
+          </Pressable>
+        </Link>
       </View>
     </Ecran>
   );

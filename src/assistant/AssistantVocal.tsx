@@ -44,7 +44,7 @@ import { demanderAudio, demanderTexte, demanderVoix, type ReponseAssistant } fro
 type Etat = 'repos' | 'ecoute' | 'analyse';
 
 /** Écrans où le bouton micro serait gênant (plein écran, caméra). */
-const ECRANS_SANS_MICRO = ['/visite-3d', '/identite'];
+const ECRANS_SANS_MICRO = ['/visite-3d', '/identite', '/moments'];
 const CLE_ACCUEIL = 'goree.accueilVocal';
 const DUREE_MAX_ECOUTE_MS = 10_000;
 const DUREE_MIN_ECOUTE_MS = 600;     // en dessous : rien d'exploitable, on redemande

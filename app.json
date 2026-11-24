@@ -50,7 +50,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Gorée Island utilise la caméra pour photographier ta CNI et prendre un selfie (tarif national de l'entrée du site).",
+          "cameraPermission": "Gorée Island utilise la caméra pour photographier ta CNI (tarif national) et pour prendre tes photos Gorée Moments.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
@@ -75,7 +75,15 @@
           "faceIDPermission": "Gorée Island utilise Face ID pour confirmer tes paiements et protéger ton compte."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Gorée Island enregistre tes photos Gorée Moments dans ta galerie.",
+          "savePhotosPermission": "Gorée Island enregistre tes photos Gorée Moments dans ta galerie.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

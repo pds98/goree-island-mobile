@@ -48,6 +48,7 @@ export default function Racine() {
           <Stack.Screen name="(onglets)" />
           <Stack.Screen name="identite" options={{ presentation: 'modal' }} />
           <Stack.Screen name="visite-3d" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+          <Stack.Screen name="moments" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         </Stack>
         {/* Notifications push des retards (sans affichage) */}
         <GestionNotifications />
