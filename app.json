@@ -8,9 +8,15 @@
     "scheme": "goreeisland",
     "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.daw.goreeisland",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.daw.goreeisland",
       "adaptiveIcon": {
         "backgroundColor": "#FFF4E2",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -33,7 +39,12 @@
           "imageWidth": 76
         }
       ],
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Gorée Island utilise le micro pour que tu puisses parler à l'assistant vocal Téranga."
+        }
+      ],
       "expo-localization",
       [
         "expo-camera",
@@ -49,7 +60,13 @@
           "locationWhenInUsePermission": "Gorée Island utilise ta position pour déclencher l'audio-guide devant chaque lieu de l'île."
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-notifications",
+        {
+          "color": "#C4401F"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

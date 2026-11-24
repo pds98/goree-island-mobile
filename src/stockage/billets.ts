@@ -13,6 +13,15 @@ import type { Billet } from '@/api/types';
 
 const CLE = 'goree.billets.v1';
 
+// Abonnés prévenus après chaque enregistrement (ex. inscription aux notifications de retard).
+const abonnes = new Set<() => void>();
+
+/** S'abonner aux nouveaux billets ; renvoie la fonction de désabonnement. */
+export function surNouveauxBillets(rappel: () => void): () => void {
+  abonnes.add(rappel);
+  return () => { abonnes.delete(rappel); };
+}
+
 export interface BilletStocke {
   billet: Billet;
   telephone: string;      // preuve de possession exigée par l'API (mode invité)
@@ -34,6 +43,7 @@ export async function enregistrerBillets(nouveaux: BilletStocke[]): Promise<void
   const parNumero = new Map(existants.map((b) => [b.billet.numero, b]));
   for (const b of nouveaux) parNumero.set(b.billet.numero, b);
   await AsyncStorage.setItem(CLE, JSON.stringify([...parNumero.values()]));
+  abonnes.forEach((rappel) => rappel());
 }
 
 export async function trouverBillet(numero: string): Promise<BilletStocke | undefined> {
