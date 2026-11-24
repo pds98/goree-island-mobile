@@ -28,7 +28,7 @@ import { lireBillets } from '@/stockage/billets';
 export const CANAL_RETARDS = 'retards';
 
 // Notification reçue app OUVERTE : on l'affiche quand même (bannière + son).
-Notifications.setNotificationHandler({
+if (Platform.OS !== 'web') Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
     shouldShowList: true,

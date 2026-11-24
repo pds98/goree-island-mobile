@@ -14,6 +14,7 @@ import {
   reporterBillet,
 } from '@/api/client';
 import type { Billet } from '@/api/types';
+import { HorairesDuJour } from '@/composants/HorairesDuJour';
 import { IconeCloche } from '@/composants/icones';
 import { Bandeau, Bouton, Ecran, EnTete, Etiquette, formaterFcfa, Texte, Titre } from '@/composants/ui';
 import { useT } from '@/i18n';
@@ -45,7 +46,7 @@ export default function DetailBillet() {
   }
 
   const estChaloupe = stocke?.billet.famille === 'CHALOUPE';
-  const rotations = useQuery({ queryKey: ['rotations'], queryFn: listerRotations, enabled: !!estChaloupe });
+  const rotations = useQuery({ queryKey: ['rotations'], queryFn: () => listerRotations(), enabled: !!estChaloupe });
   const retardDakar = rotations.data?.find((r) => r.depart === 'Dakar' && r.retard_minutes > 0
     && dateDakar(r.heure_prevue) === stocke?.billet.date_visite);
   const retoursGoree = rotations.data?.filter((r) => r.depart === 'Gorée') ?? [];
@@ -90,7 +91,7 @@ export default function DetailBillet() {
             <Texte gras style={{ color: couleur, fontSize: 12, letterSpacing: 1.2 }}>
               {estChaloupe ? t('familleChaloupe') : t('familleSite')}
             </Texte>
-            <Titre taille={22}>{estChaloupe ? 'Dakar ⇄ Gorée' : titulaire}</Titre>
+            <Titre taille={22}>{stocke.nom ?? (estChaloupe ? 'Dakar ⇄ Gorée' : titulaire)}</Titre>
           </View>
           <Etiquette fond={billet.statut === 'ACTIF' ? couleurs.vert : couleurs.bordure} couleur={couleurs.blanc}
             texte={billet.statut === 'ACTIF' ? t('valide').toUpperCase() : billet.statut} />
@@ -120,6 +121,9 @@ export default function DetailBillet() {
         fontSize: 12 }}>{estChaloupe ? t('scannerEmbarcadere') : t('scannerSite')}</Texte>
 
       {message ? <Bandeau ton={message.ton} texte={message.texte} /> : null}
+
+      {/* Chaloupe : tous les départs et arrivées du jour, avec accès au suivi en direct */}
+      {estChaloupe ? <HorairesDuJour jour={billet.date_visite} rotationBillet={billet.rotation_aller_id} /> : null}
 
       {estChaloupe && billet.coupons.length > 1 && retoursGoree.length > 0 ? (
         <View style={{ gap: 8 }}>

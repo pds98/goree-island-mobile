@@ -12,8 +12,9 @@ import {
   acheterChaloupe, aujourdHui, dateDakar, ErreurApiClient, heureDakar, listerRotations,
 } from '@/api/client';
 import type { MoyenPaiement, Trajet } from '@/api/types';
-import { Calendrier } from '@/composants/Calendrier';
-import { MoyensPaiement } from '@/composants/MoyensPaiement';
+import { Calendrier, libelleDate } from '@/composants/Calendrier';
+import { FeuilleConfirmation } from '@/composants/FeuilleConfirmation';
+import { MOYENS, MoyensPaiement } from '@/composants/MoyensPaiement';
 import {
   Bandeau, Bouton, Champ, Compteur, Ecran, Etiquette, formaterFcfa, Frise, Segment, Texte, Titre,
 } from '@/composants/ui';
@@ -46,8 +47,9 @@ export default function Chaloupe() {
   const [nom, setNom] = useState('');
   const [telephone, setTelephone] = useState('+221 ');
   const [moyen, setMoyen] = useState<MoyenPaiement>('WAVE');
+  const [confirmation, setConfirmation] = useState(false);   // feuille « Confirmer et payer »
 
-  const rotations = useQuery({ queryKey: ['rotations'], queryFn: listerRotations });
+  const rotations = useQuery({ queryKey: ['rotations', jour], queryFn: () => listerRotations(jour) });
   const departs = (rotations.data ?? []).filter((r) => r.depart === 'Dakar'
     && dateDakar(r.heure_prevue) === jour);
   // Jours ayant au moins un départ publié depuis Dakar : un point dans le calendrier.
@@ -59,6 +61,7 @@ export default function Chaloupe() {
       nom, telephone: telephone.replace(/\s/g, ''), date_visite: jour, trajet, passagers,
       rotation_id: rotationId, moyen_paiement: moyen,
     }),
+    onSettled: () => setConfirmation(false),
     onSuccess: async (commande) => {
       await enregistrerBillets(commande.billets.map((billet) => ({
         billet, telephone: telephone.replace(/\s/g, ''), titulaire: nom,
@@ -144,9 +147,29 @@ export default function Chaloupe() {
             <Titre taille={20}>{formaterFcfa(PRIX_PAR_PASSAGER[trajet] * passagers)}</Titre>
           </View>
           <Bouton titre={t('payer')} variante="ocean" style={{ flex: 1 }}
-            chargement={achat.isPending} desactive={!formulaireValide} onPress={() => achat.mutate()} />
+            chargement={achat.isPending} desactive={!formulaireValide} onPress={() => setConfirmation(true)} />
         </View>
       </View>
+
+      {/* Récapitulatif avant paiement : rien n'est payé sans confirmation */}
+      <FeuilleConfirmation visible={confirmation} ton="ocean" titre={t('confirmerPaiement')}
+        lignes={[
+          { libelle: t('recapTrajet'), valeur: `Dakar ⇄ Gorée · ${trajet === 'ALLER_RETOUR' ? t('allerRetour') : t('allerSimple')}` },
+          { libelle: t('recapDate'), valeur: libelleDate(jour, t) },
+          { libelle: t('recapDepart'), valeur: departs.find((r) => r.id === rotationId)?.nom ?? t('tousDeparts') },
+          { libelle: t('passagers'), valeur: `${passagers} × ${formaterFcfa(PRIX_PAR_PASSAGER[trajet])}` },
+          { libelle: t('recapTitulaire'), valeur: nom.trim() },
+          { libelle: t('recapMoyen'), valeur: nomMoyen(moyen) },
+        ]}
+        total={formaterFcfa(PRIX_PAR_PASSAGER[trajet] * passagers)}
+        message={t('paiementSecurise', { moyen: nomMoyen(moyen) })}
+        libelleConfirmer={t('confirmerEtPayer')} libelleAnnuler={t('modifier')} chargement={achat.isPending}
+        onAnnuler={() => setConfirmation(false)} onConfirmer={() => achat.mutate()} />
     </Ecran>
   );
+}
+
+/** Nom affiché d'un moyen de paiement (« Wave », « Orange Money »…). */
+function nomMoyen(api: MoyenPaiement): string {
+  return MOYENS.find((m) => m.api === api)?.nom ?? api;
 }

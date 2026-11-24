@@ -15,8 +15,9 @@ import type { MoyenPaiement, NomPack } from '@/api/types';
 import {
   IconeCasque, IconeCircuit, IconeCoche, IconeCouches, IconeGuide, IconeHotel, IconeResto,
 } from '@/composants/icones';
-import { Calendrier } from '@/composants/Calendrier';
-import { MoyensPaiement } from '@/composants/MoyensPaiement';
+import { Calendrier, libelleDate } from '@/composants/Calendrier';
+import { FeuilleConfirmation } from '@/composants/FeuilleConfirmation';
+import { MOYENS, MoyensPaiement } from '@/composants/MoyensPaiement';
 import {
   Bandeau, Bouton, Carte, Champ, Compteur, Ecran, formaterFcfa, Frise, Segment, Texte, Titre,
 } from '@/composants/ui';
@@ -49,6 +50,7 @@ export default function Ile() {
   const [nom, setNom] = useState(p.nomCarte ?? '');
   const [telephone, setTelephone] = useState('+221 ');
   const [moyen, setMoyen] = useState<MoyenPaiement>('WAVE');
+  const [confirmation, setConfirmation] = useState(false);   // feuille « Confirmer et payer »
 
   // Les paramètres changent quand on revient de /identite ou de /packs :
   // on ajuste l'état pendant le rendu (motif recommandé par React, sans effet).
@@ -77,6 +79,7 @@ export default function Ile() {
       verification_id: nat === 'NATIONAL' ? p.verification : null,
       adultes_supp: adultesEffectifs, enfants, pack, moyen_paiement: moyen,
     }),
+    onSettled: () => setConfirmation(false),
     onSuccess: async (commande) => {
       await enregistrerBillets(commande.billets.map((billet) => ({
         billet, telephone: telephone.replace(/\s/g, ''), titulaire: nom,
@@ -159,8 +162,23 @@ export default function Ile() {
 
           {achat.error ? <Bandeau ton="erreur" texte={(achat.error as ErreurApiClient).message} /> : null}
           <Bouton titre={`${t('acheterEntree')} · ${formaterFcfa(total)}`} chargement={achat.isPending}
-            desactive={!pret} onPress={() => achat.mutate()} />
+            desactive={!pret} onPress={() => setConfirmation(true)} />
         </Carte>
+
+        {/* Récapitulatif avant paiement : rien n'est payé sans confirmation */}
+        <FeuilleConfirmation visible={confirmation} ton="terracotta" titre={t('confirmerPaiement')}
+          lignes={[
+            { libelle: t('recapTrajet'), valeur: `${t('entreeSite')} · ${nat === 'NATIONAL' ? t('national') : t('international')}` },
+            { libelle: t('recapDate'), valeur: libelleDate(jour, t) },
+            { libelle: t('recapVisiteurs'), valeur: `👤 ${1 + adultesEffectifs}${enfants ? `  ·  🧒 ${enfants}` : ''}` },
+            { libelle: t('recapPack'), valeur: `${PACKS.find((x) => x.niveau === pack)!.nom}${prixPack ? ` · ${formaterFcfa(prixPack)}` : ''}` },
+            { libelle: t('recapTitulaire'), valeur: nom.trim() },
+            { libelle: t('recapMoyen'), valeur: MOYENS.find((m) => m.api === moyen)?.nom ?? moyen },
+          ]}
+          total={formaterFcfa(total)}
+          message={t('paiementSecurise', { moyen: MOYENS.find((m) => m.api === moyen)?.nom ?? moyen })}
+          libelleConfirmer={t('confirmerEtPayer')} libelleAnnuler={t('modifier')} chargement={achat.isPending}
+          onAnnuler={() => setConfirmation(false)} onConfirmer={() => achat.mutate()} />
 
         <Titre taille={19}>{t('surPlace')}</Titre>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>

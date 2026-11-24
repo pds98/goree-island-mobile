@@ -10,6 +10,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AssistantVocal } from '@/assistant/AssistantVocal';
 import { PanneauLangue } from '@/composants/SelecteurLangue';
@@ -37,6 +38,7 @@ export default function Racine() {
   if (!policesPretes) return null;
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <QueryClientProvider client={client}>
       <FournisseurI18n>
         <StatusBar style="dark" />
@@ -53,5 +55,6 @@ export default function Racine() {
         <PanneauLangue />
       </FournisseurI18n>
     </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

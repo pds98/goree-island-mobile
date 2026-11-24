@@ -15,7 +15,7 @@ import { couleurs, espace, polices, rayon } from '@/theme';
 
 export default function Accueil() {
   const { t } = useT();
-  const rotations = useQuery({ queryKey: ['rotations'], queryFn: listerRotations });
+  const rotations = useQuery({ queryKey: ['rotations'], queryFn: () => listerRotations() });
 
   // Prochain départ de Dakar, en tenant compte du retard éventuel.
   const [maintenant] = useState(Date.now);

@@ -10,7 +10,7 @@ import { Platform } from 'react-native';
 import { DEMO_CIRCUITS, DEMO_PARTENAIRES } from '@/demo/donnees';
 
 import type {
-  Circuit, Commande, MoyenPaiement, NomPack, Partenaire, ReponseAudio, Rotation, Trajet,
+  Circuit, Commande, MoyenPaiement, NomPack, Partenaire, ReponseAudio, Rotation, SuiviChaloupe, Trajet,
   Verification, Billet,
 } from './types';
 
@@ -62,7 +62,13 @@ export function aujourdHui(decalageJours = 0): string {
 
 // --- Parcours 1 : chaloupe ------------------------------------------------------
 
-export const listerRotations = () => requete<Rotation[]>('/rotations');
+/** Horaires d'un jour (aujourd'hui par défaut) : départs, arrivées estimées, retards. */
+export const listerRotations = (jour?: string) =>
+  requete<Rotation[]>(`/rotations${jour ? `?jour=${jour}` : ''}`);
+
+/** Suivi en direct d'une chaloupe : statut, progression, position (GPS ou estimée). */
+export const suivreRotation = (id: string) =>
+  requete<SuiviChaloupe>(`/rotations/${encodeURIComponent(id)}/suivi`);
 
 export const acheterChaloupe = (a: {
   nom: string; telephone: string; date_visite: string; trajet: Trajet;

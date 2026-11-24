@@ -10,12 +10,18 @@
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 
 import { useT } from '@/i18n';
 import { surNouveauxBillets } from '@/stockage/billets';
 import { billetDeLaNotification, synchroniserPush } from './push';
 
+/** Pas de notifications sur la version web (API indisponible dans le navigateur). */
 export function GestionNotifications() {
+  return Platform.OS === 'web' ? null : <GestionNotificationsNative />;
+}
+
+function GestionNotificationsNative() {
   const { langue } = useT();
   const derniereOuverte = useRef<string | null>(null);
 

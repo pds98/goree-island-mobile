@@ -28,6 +28,8 @@ export interface Billet {
   enfants: number | null;
   adultes_supp: number | null;
   pack: NomPack | null;
+  trajet?: Trajet | null;
+  rotation_aller_id?: string | null;   // départ choisi à l'achat (facultatif)
   coupons: Coupon[];
 }
 
@@ -39,13 +41,31 @@ export interface Commande {
   billets: Billet[];
 }
 
+export type Port = 'Dakar' | 'Gorée';
+
 export interface Rotation {
   id: string;
   nom: string;
-  depart: 'Dakar' | 'Gorée';
+  depart: Port;
+  arrivee: Port;
   heure_prevue: string;
   retard_minutes: number;
+  heure_depart_reelle: string;     // prévue + retard
+  heure_arrivee_estimee: string;   // départ réel + durée de traversée
+  duree_min: number;
   capacite: number;
+}
+
+export type StatutTraversee = 'A_QUAI' | 'EN_MER' | 'ARRIVEE';
+
+/** Suivi en direct d'une chaloupe (GET /rotations/{id}/suivi). */
+export interface SuiviChaloupe extends Rotation {
+  statut: StatutTraversee;
+  progression: number;             // 0 → 1
+  position: { lat: number; lon: number };
+  source: 'GPS' | 'ESTIMATION';
+  minutes_restantes: number;
+  ports: Record<Port, { lat: number; lon: number }>;
 }
 
 export interface Verification {
