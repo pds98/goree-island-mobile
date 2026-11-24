@@ -14,6 +14,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AssistantVocal } from '@/assistant/AssistantVocal';
 import { PanneauLangue } from '@/composants/SelecteurLangue';
+import { FournisseurCompte } from '@/compte/ContexteCompte';
 import { FournisseurI18n } from '@/i18n';
 import { GestionNotifications } from '@/notifications/GestionNotifications';
 import { couleurs } from '@/theme';
@@ -41,6 +42,7 @@ export default function Racine() {
     <GestureHandlerRootView style={{ flex: 1 }}>
     <QueryClientProvider client={client}>
       <FournisseurI18n>
+      <FournisseurCompte>
         <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: couleurs.sable } }}>
           <Stack.Screen name="(onglets)" />
@@ -53,6 +55,7 @@ export default function Racine() {
         <AssistantVocal />
         {/* Panneau des langues : dernier enfant → dessiné au-dessus de tout */}
         <PanneauLangue />
+      </FournisseurCompte>
       </FournisseurI18n>
     </QueryClientProvider>
     </GestureHandlerRootView>

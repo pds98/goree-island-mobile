@@ -21,6 +21,7 @@ import { MOYENS, MoyensPaiement } from '@/composants/MoyensPaiement';
 import {
   Bandeau, Bouton, Carte, Champ, Compteur, Ecran, formaterFcfa, Frise, Segment, Texte, Titre,
 } from '@/composants/ui';
+import { confirmerIdentite } from '@/compte/biometrie';
 import { useT, type Cles } from '@/i18n';
 import { enregistrerBillets } from '@/stockage/billets';
 import { couleurs } from '@/theme';
@@ -178,7 +179,10 @@ export default function Ile() {
           total={formaterFcfa(total)}
           message={t('paiementSecurise', { moyen: MOYENS.find((m) => m.api === moyen)?.nom ?? moyen })}
           libelleConfirmer={t('confirmerEtPayer')} libelleAnnuler={t('modifier')} chargement={achat.isPending}
-          onAnnuler={() => setConfirmation(false)} onConfirmer={() => achat.mutate()} />
+          onAnnuler={() => setConfirmation(false)} onConfirmer={async () => {
+          // Face ID (si activé dans « Mon compte ») avant de lancer le paiement.
+          if (await confirmerIdentite(t('faceIdPaiement'), t('annuler'))) achat.mutate();
+        }} />
 
         <Titre taille={19}>{t('surPlace')}</Titre>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>

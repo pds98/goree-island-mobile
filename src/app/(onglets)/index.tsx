@@ -6,15 +6,17 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { heureDakar, listerRotations } from '@/api/client';
-import { IconeBateau, IconeBillet, IconeLieu } from '@/composants/icones';
+import { IconeBateau, IconeBillet, IconeLieu, IconePersonne } from '@/composants/icones';
 import { Etiquette, Frise, Texte, Titre } from '@/composants/ui';
 import { SelecteurLangue } from '@/composants/SelecteurLangue';
 import { VideoAccueil } from '@/composants/VideoAccueil';
+import { useCompte } from '@/compte/ContexteCompte';
 import { useT } from '@/i18n';
 import { couleurs, espace, polices, rayon } from '@/theme';
 
 export default function Accueil() {
   const { t } = useT();
+  const { compte } = useCompte();
   const rotations = useQuery({ queryKey: ['rotations'], queryFn: () => listerRotations() });
 
   // Prochain départ de Dakar, en tenant compte du retard éventuel.
@@ -39,6 +41,18 @@ export default function Accueil() {
                 <Text style={{ fontFamily: polices.texteGras, fontSize: 11, letterSpacing: 3,
                   color: couleurs.terracotta }}>ISLAND</Text>
               </View>
+              {/* Accès au compte (facultatif) : initiale si connecté, silhouette sinon */}
+              <Link href="/compte" asChild>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('ouvrirMonCompte')} hitSlop={6}
+                  style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: compte ? couleurs.ocean : 'rgba(255,255,255,0.92)',
+                    borderWidth: 1.5, borderColor: compte ? couleurs.blanc : couleurs.bordure }}>
+                  {compte ? (
+                    <Text style={{ fontFamily: polices.titre, fontSize: 18, color: couleurs.blanc }}>
+                      {(compte.nom || compte.email || '?').trim().charAt(0).toUpperCase()}</Text>
+                  ) : <IconePersonne couleur={couleurs.encre} taille={22} />}
+                </Pressable>
+              </Link>
             </View>
             <Etiquette texte={t('bienvenue').toUpperCase()} fond={couleurs.bougainvillier}
               couleur={couleurs.blanc} incline />

@@ -18,6 +18,7 @@ import { MOYENS, MoyensPaiement } from '@/composants/MoyensPaiement';
 import {
   Bandeau, Bouton, Champ, Compteur, Ecran, Etiquette, formaterFcfa, Frise, Segment, Texte, Titre,
 } from '@/composants/ui';
+import { confirmerIdentite } from '@/compte/biometrie';
 import { useT } from '@/i18n';
 import { enregistrerBillets } from '@/stockage/billets';
 import { couleurs, polices } from '@/theme';
@@ -164,7 +165,10 @@ export default function Chaloupe() {
         total={formaterFcfa(PRIX_PAR_PASSAGER[trajet] * passagers)}
         message={t('paiementSecurise', { moyen: nomMoyen(moyen) })}
         libelleConfirmer={t('confirmerEtPayer')} libelleAnnuler={t('modifier')} chargement={achat.isPending}
-        onAnnuler={() => setConfirmation(false)} onConfirmer={() => achat.mutate()} />
+        onAnnuler={() => setConfirmation(false)} onConfirmer={async () => {
+          // Face ID (si activé dans « Mon compte ») avant de lancer le paiement.
+          if (await confirmerIdentite(t('faceIdPaiement'), t('annuler'))) achat.mutate();
+        }} />
     </Ecran>
   );
 }

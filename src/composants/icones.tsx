@@ -81,3 +81,10 @@ export const IconeCloche = ({ couleur, taille = 22 }: P) => (
     <Path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9" /><Path d="M10 21a2 2 0 004 0" />
   </Svg>
 );
+
+export const IconePersonne = ({ couleur, taille = 22 }: P) => (
+  <Svg width={taille} height={taille} viewBox="0 0 24 24" fill="none" stroke={couleur} strokeWidth={1.9}
+    strokeLinecap="round">
+    <Circle cx={12} cy={8} r={4} /><Path d="M4 21a8 8 0 0116 0" />
+  </Svg>
+);
