@@ -22,10 +22,11 @@ import { Bouton, Etiquette, Segment, Texte, Titre } from '@/composants/ui';
 import { useT, type Cles } from '@/i18n';
 import { couleurs, espace, polices, rayon } from '@/theme';
 
-export type EtatTraversee = 'A_VENIR' | 'EN_MER' | 'ARRIVEE';
+export type EtatTraversee = 'A_VENIR' | 'EN_MER' | 'ARRIVEE' | 'ANNULEE';
 
 /** État d'une traversée à l'instant `maintenant` (ms), d'après ses heures réelles. */
 export function etatTraversee(r: Rotation, maintenant: number): EtatTraversee {
+  if (r.annulee) return 'ANNULEE';
   if (maintenant < Date.parse(r.heure_depart_reelle)) return 'A_VENIR';
   if (maintenant < Date.parse(r.heure_arrivee_estimee)) return 'EN_MER';
   return 'ARRIVEE';
@@ -102,7 +103,7 @@ export function HorairesDuJour({ jour, rotationBillet }: { jour: string; rotatio
 }
 
 const LIBELLE_ETAT: Record<EtatTraversee, Cles> = {
-  A_VENIR: 'statutAQuai', EN_MER: 'statutEnMer', ARRIVEE: 'statutArrivee',
+  A_VENIR: 'statutAQuai', EN_MER: 'statutEnMer', ARRIVEE: 'statutArrivee', ANNULEE: 'statutAnnulee',
 };
 
 function LigneHoraire({ r, etat, estBillet, estProchain }: {
@@ -110,6 +111,7 @@ function LigneHoraire({ r, etat, estBillet, estProchain }: {
 }) {
   const { t } = useT();
   const passe = etat === 'ARRIVEE';
+  const annulee = etat === 'ANNULEE';
   const enAvant = estBillet || estProchain || etat === 'EN_MER';
   const fond = estBillet ? couleurs.ocean : etat === 'EN_MER' ? couleurs.oceanClair : couleurs.blanc;
   const encre = estBillet ? couleurs.blanc : couleurs.encre;
@@ -126,7 +128,8 @@ function LigneHoraire({ r, etat, estBillet, estProchain }: {
         opacity: passe && !estBillet ? 0.5 : pressed ? 0.85 : 1 })}>
       {/* Départ (heure réelle ; heure prévue barrée si retard) */}
       <View style={{ width: 58 }}>
-        <Text style={{ fontFamily: polices.titre, fontSize: 18, color: encre }}>
+        <Text style={{ fontFamily: polices.titre, fontSize: 18, color: annulee ? couleurs.rouge : encre,
+          textDecorationLine: annulee ? 'line-through' : 'none' }}>
           {heureDakar(r.heure_depart_reelle)}</Text>
         {r.retard_minutes ? (
           <Text style={{ fontFamily: polices.texte, fontSize: 11, color: doux, textDecorationLine: 'line-through' }}>
@@ -151,7 +154,8 @@ function LigneHoraire({ r, etat, estBillet, estProchain }: {
       </View>
 
       <View style={{ width: 84, alignItems: 'flex-end' }}>
-        {estBillet ? <Etiquette texte={t('taChaloupe')} fond={couleurs.ocre} />
+        {annulee ? <Etiquette texte={t('statutAnnulee')} fond={couleurs.rouge} couleur={couleurs.blanc} />
+          : estBillet ? <Etiquette texte={t('taChaloupe')} fond={couleurs.ocre} />
           : estProchain ? <Etiquette texte={t('prochainCourt')} fond={couleurs.vert} couleur={couleurs.blanc} />
             : <Texte style={{ fontSize: 12, color: doux }}>{t(LIBELLE_ETAT[etat])}</Texte>}
       </View>

@@ -54,9 +54,11 @@ export interface Rotation {
   heure_arrivee_estimee: string;   // départ réel + durée de traversée
   duree_min: number;
   capacite: number;
+  annulee?: boolean;               // départ annulé par l'exploitant
+  exceptionnel?: boolean;          // départ ajouté ponctuellement
 }
 
-export type StatutTraversee = 'A_QUAI' | 'EN_MER' | 'ARRIVEE';
+export type StatutTraversee = 'A_QUAI' | 'EN_MER' | 'ARRIVEE' | 'ANNULEE';
 
 /** Suivi en direct d'une chaloupe (GET /rotations/{id}/suivi). */
 export interface SuiviChaloupe extends Rotation {

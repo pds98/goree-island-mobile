@@ -273,4 +273,7 @@ export const ar: Dictionnaire = {
   tagProprete: 'النظافة',
   tagInfo: 'نقص المعلومات',
   tagBug: 'خلل في التطبيق',
+  statutAnnulee: 'أُلغيت',
+  departAnnule: 'أُلغيت الرحلة',
+  departAnnuleTexte: 'ألغى المشغّل هذه الرحلة. تذكرتك صالحة لرحلة أخرى اليوم.',
 };

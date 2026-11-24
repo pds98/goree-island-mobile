@@ -22,6 +22,7 @@ import { couleurs, espace, polices, rayon } from '@/theme';
 
 /** Progression et statut affichés : GPS tel quel, sinon recalculés à la seconde. */
 function etatAffiche(s: SuiviChaloupe, maintenant: number): { p: number; statut: StatutTraversee } {
+  if (s.statut === 'ANNULEE') return { p: 0, statut: 'ANNULEE' };
   if (s.source === 'GPS') return { p: s.progression, statut: s.statut };
   const debut = Date.parse(s.heure_depart_reelle);
   const fin = Date.parse(s.heure_arrivee_estimee);
@@ -62,7 +63,8 @@ export default function SuiviChaloupeEcran() {
   const minutesAvant = Math.max(0, Math.ceil((Date.parse(s.heure_depart_reelle) - maintenant) / 60_000));
   const minutesRestantes = s.source === 'GPS' ? s.minutes_restantes
     : Math.max(0, Math.ceil((Date.parse(s.heure_arrivee_estimee) - maintenant) / 60_000));
-  const phrase = statut === 'A_QUAI' ? t('departDansN', { n: minutesAvant })
+  const phrase = statut === 'ANNULEE' ? t('departAnnule')
+    : statut === 'A_QUAI' ? t('departDansN', { n: minutesAvant })
     : statut === 'EN_MER' ? t('arriveeDansN', { n: minutesRestantes })
       : t('arriveeA', { port: s.arrivee });
   const indexEtape = ETAPES.findIndex((e) => e.statut === statut);
@@ -82,7 +84,8 @@ export default function SuiviChaloupeEcran() {
         <Etiquette texte={s.nom} fond={couleurs.oceanFonce} couleur={couleurs.blanc} />
       </View>
 
-      <CarteBaie depart={s.depart} progression={p} statut={statut} gps={s.source === 'GPS'} />
+      {statut === 'ANNULEE' ? <Bandeau ton="erreur" texte={t('departAnnuleTexte')} /> : null}
+      <CarteBaie depart={s.depart} progression={p} statut={statut === 'ANNULEE' ? 'A_QUAI' : statut} gps={s.source === 'GPS'} />
 
       {/* Statut principal + étapes */}
       <View style={{ backgroundColor: couleurs.sable, borderRadius: 24, padding: 18, gap: 16 }}>
@@ -132,7 +135,7 @@ export default function SuiviChaloupeEcran() {
                     color: actif ? couleurs.encre : couleurs.blanc }}>{heureDakar(r.heure_depart_reelle)}</Text>
                   <Text style={{ fontFamily: polices.texteMoyen, fontSize: 11,
                     color: actif ? couleurs.encre : couleurs.oceanClair }}>
-                    {etat === 'EN_MER' ? t('statutEnMer') : etat === 'ARRIVEE' ? t('statutArrivee')
+                    {etat === 'ANNULEE' ? t('statutAnnulee') : etat === 'EN_MER' ? t('statutEnMer') : etat === 'ARRIVEE' ? t('statutArrivee')
                       : r.retard_minutes ? `+${r.retard_minutes} min` : t('aLHeure')}
                   </Text>
                 </Pressable>

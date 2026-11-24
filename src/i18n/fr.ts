@@ -286,6 +286,9 @@ export const fr = {
   tagProprete: 'Propreté',
   tagInfo: 'Manque d’infos',
   tagBug: 'Bug de l’appli',
+  statutAnnulee: 'Annulé',
+  departAnnule: 'Départ annulé',
+  departAnnuleTexte: "Ce départ est annulé par l'exploitant. Ton billet reste valable sur un autre départ du jour.",
 };
 
 export type Cles = keyof typeof fr;

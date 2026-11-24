@@ -273,4 +273,7 @@ export const en: Dictionnaire = {
   tagProprete: 'Cleanliness',
   tagInfo: 'Lack of info',
   tagBug: 'App bug',
+  statutAnnulee: 'Cancelled',
+  departAnnule: 'Departure cancelled',
+  departAnnuleTexte: 'This departure was cancelled by the operator. Your ticket is valid on another departure today.',
 };

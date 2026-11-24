@@ -273,4 +273,7 @@ export const es: Dictionnaire = {
   tagProprete: 'Limpieza',
   tagInfo: 'Falta de información',
   tagBug: 'Error de la app',
+  statutAnnulee: 'Cancelada',
+  departAnnule: 'Salida cancelada',
+  departAnnuleTexte: 'El operador canceló esta salida. Tu billete sirve para otra salida del día.',
 };
