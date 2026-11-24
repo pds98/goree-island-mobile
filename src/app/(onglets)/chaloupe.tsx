@@ -4,7 +4,7 @@
  */
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -27,10 +27,22 @@ const PRIX_PAR_PASSAGER: Record<Trajet, number> = { ALLER_SIMPLE: 750, ALLER_RET
 
 export default function Chaloupe() {
   const { t } = useT();
-  const [trajet, setTrajet] = useState<Trajet>('ALLER_RETOUR');
-  const [jour, setJour] = useState(aujourdHui());
+  // Paramètres envoyés par l'assistant vocal (« 2 billets aller-retour samedi »).
+  const p = useLocalSearchParams<{ passagers?: string; trajet?: Trajet; date?: string }>();
+  const [trajet, setTrajet] = useState<Trajet>(p.trajet ?? 'ALLER_RETOUR');
+  const [jour, setJour] = useState(p.date && p.date >= aujourdHui() ? p.date : aujourdHui());
   const [rotationId, setRotationId] = useState<string | null>(null);
-  const [passagers, setPassagers] = useState(1);
+  const [passagers, setPassagers] = useState(Math.min(10, Math.max(1, Number(p.passagers) || 1)));
+
+  // Nouvelle demande de l'assistant alors que l'écran est déjà ouvert : on
+  // ajuste l'état pendant le rendu (motif recommandé par React, sans effet).
+  const [derniersParams, setDerniersParams] = useState(p);
+  if (p.passagers !== derniersParams.passagers || p.trajet !== derniersParams.trajet || p.date !== derniersParams.date) {
+    setDerniersParams(p);
+    if (p.passagers) setPassagers(Math.min(10, Math.max(1, Number(p.passagers) || 1)));
+    if (p.trajet) setTrajet(p.trajet);
+    if (p.date && p.date >= aujourdHui()) { setJour(p.date); setRotationId(null); }
+  }
   const [nom, setNom] = useState('');
   const [telephone, setTelephone] = useState('+221 ');
   const [moyen, setMoyen] = useState<MoyenPaiement>('WAVE');

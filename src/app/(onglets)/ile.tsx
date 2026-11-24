@@ -37,22 +37,30 @@ const PACKS: { niveau: NomPack; nom: string; prix: number; contenu: Cles }[] = [
 export default function Ile() {
   const { t } = useT();
   // Retour de l'écran /identite avec le résultat de la vérification.
-  const p = useLocalSearchParams<{ verification?: string; cni4?: string; nomCarte?: string; pack?: NomPack }>();
+  const p = useLocalSearchParams<{ verification?: string; cni4?: string; nomCarte?: string; pack?: NomPack;
+    // Envoyés par l'assistant vocal :
+    nat?: Nat; enfants?: string; adultes?: string; date?: string }>();
 
-  const [nat, setNat] = useState<Nat>(p.verification ? 'NATIONAL' : 'INTERNATIONAL');
-  const [enfants, setEnfants] = useState(0);
-  const [adultes, setAdultes] = useState(0);
+  const [nat, setNat] = useState<Nat>(p.verification ? 'NATIONAL' : p.nat ?? 'INTERNATIONAL');
+  const [enfants, setEnfants] = useState(Math.min(6, Number(p.enfants) || 0));
+  const [adultes, setAdultes] = useState(Math.min(9, Number(p.adultes) || 0));
   const [pack, setPack] = useState<NomPack>(p.pack ?? 'DECOUVERTE');
-  const [jour, setJour] = useState(aujourdHui());
+  const [jour, setJour] = useState(p.date && p.date >= aujourdHui() ? p.date : aujourdHui());
   const [nom, setNom] = useState(p.nomCarte ?? '');
   const [telephone, setTelephone] = useState('+221 ');
   const [moyen, setMoyen] = useState<MoyenPaiement>('WAVE');
 
   // Les paramètres changent quand on revient de /identite ou de /packs :
   // on ajuste l'état pendant le rendu (motif recommandé par React, sans effet).
-  const [derniersParams, setDerniersParams] = useState({ v: p.verification, pack: p.pack });
-  if (p.verification !== derniersParams.v || p.pack !== derniersParams.pack) {
-    setDerniersParams({ v: p.verification, pack: p.pack });
+  const [derniersParams, setDerniersParams] = useState({ v: p.verification, pack: p.pack, nat: p.nat,
+    enfants: p.enfants, adultes: p.adultes, date: p.date });
+  if (p.verification !== derniersParams.v || p.pack !== derniersParams.pack || p.nat !== derniersParams.nat
+    || p.enfants !== derniersParams.enfants || p.adultes !== derniersParams.adultes || p.date !== derniersParams.date) {
+    setDerniersParams({ v: p.verification, pack: p.pack, nat: p.nat, enfants: p.enfants, adultes: p.adultes, date: p.date });
+    if (p.nat && !p.verification) setNat(p.nat);
+    if (p.enfants) setEnfants(Math.min(6, Number(p.enfants) || 0));
+    if (p.adultes) setAdultes(Math.min(9, Number(p.adultes) || 0));
+    if (p.date && p.date >= aujourdHui()) setJour(p.date);
     if (p.verification) setNat('NATIONAL');
     if (p.nomCarte) setNom(p.nomCarte);
     if (p.pack) setPack(p.pack);

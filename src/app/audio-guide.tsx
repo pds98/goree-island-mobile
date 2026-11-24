@@ -24,7 +24,8 @@ import { API_URL, ErreurApiClient, listerCircuits, positionAudio } from '@/api/c
 import type { ReponseAudio } from '@/api/types';
 import { Bandeau, Bouton, Carte, Ecran, EnTete, Etiquette, Texte, Titre } from '@/composants/ui';
 import { LIEUX, lieuParNom, ORDRE_VISITE, traduire, type IdLieu } from '@/demo/donnees';
-import { CODE_VOIX, useT } from '@/i18n';
+import { parlerNaturel } from '@/assistant/synthese';
+import { useT } from '@/i18n';
 import { lireBillets, type BilletStocke } from '@/stockage/billets';
 import { couleurs, polices } from '@/theme';
 
@@ -97,11 +98,9 @@ export default function AudioGuide() {
 
   // --- Mode démo : narration par synthèse vocale ----------------------------------
   const lire = useCallback((id: IdLieu) => {
-    Speech.stop();
     setLieuActif(id);
     setEnLecture(true);
-    Speech.speak(traduire(LIEUX[id].narration, langue), {
-      language: CODE_VOIX[langue], rate: 0.95,
+    void parlerNaturel(traduire(LIEUX[id].narration, langue), langue, {
       onDone: () => setEnLecture(false), onStopped: () => setEnLecture(false),
       onError: () => setEnLecture(false),
     });

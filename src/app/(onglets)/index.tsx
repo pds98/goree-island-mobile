@@ -31,14 +31,14 @@ export default function Accueil() {
           <VideoAccueil video={require('@/assets/videos/goree-vagues-boucle.mp4')}
             photo={require('@/assets/images/goree/goree-hero.jpg')}
             description="Gorée vue de la mer, maisons colorées" />
-          <SafeAreaView edges={['top']} style={{ paddingHorizontal: espace.xl, gap: espace.l }}>
+          <SafeAreaView edges={['top']} style={{ paddingHorizontal: espace.xl, gap: espace.l, zIndex: 2,
+            elevation: 2 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
                 <Titre taille={28}>Gorée</Titre>
                 <Text style={{ fontFamily: polices.texteGras, fontSize: 11, letterSpacing: 3,
                   color: couleurs.terracotta }}>ISLAND</Text>
               </View>
-              <SelecteurLangue />
             </View>
             <Etiquette texte={t('bienvenue').toUpperCase()} fond={couleurs.bougainvillier}
               couleur={couleurs.blanc} incline />
@@ -50,7 +50,12 @@ export default function Accueil() {
           borderTopRightRadius: 28, overflow: 'hidden' }}>
           <Frise />
           <View style={{ padding: espace.xl, gap: espace.m }}>
-            <Titre taille={20}>{t('queFaire')}</Titre>
+            {/* Bouton de langue HORS de la vidéo : sur iPhone, la vue vidéo native
+                captait une partie des touchers du bouton posé dessus. */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <Titre taille={20} style={{ flexShrink: 1 }}>{t('queFaire')}</Titre>
+              <SelecteurLangue />
+            </View>
 
             <Link href="/chaloupe" asChild>
               <Pressable accessibilityRole="link" style={{ ...carte, backgroundColor: couleurs.ocean }}>

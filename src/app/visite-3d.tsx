@@ -21,7 +21,8 @@ import { Bandeau } from '@/composants/ui';
 import { Canvas } from '@/composants/visite3d/Canvas3D';
 import { SceneGoree, type ControleCamera } from '@/composants/visite3d/SceneGoree';
 import { LIEUX, ORDRE_VISITE, traduire, type IdLieu } from '@/demo/donnees';
-import { CODE_VOIX, useT } from '@/i18n';
+import { parlerNaturel } from '@/assistant/synthese';
+import { useT } from '@/i18n';
 import { couleurs, polices } from '@/theme';
 
 /** Distance entre deux doigts (pour le pincement). */
@@ -44,10 +45,8 @@ export default function Visite3D() {
   // --- Narration ------------------------------------------------------------------
   const arreter = useCallback(() => { Speech.stop(); setEnLecture(false); }, []);
   const lire = useCallback((id: IdLieu) => {
-    Speech.stop();
     setEnLecture(true);
-    Speech.speak(traduire(LIEUX[id].narration, langue), {
-      language: CODE_VOIX[langue], rate: 0.95,
+    void parlerNaturel(traduire(LIEUX[id].narration, langue), langue, {
       onDone: () => setEnLecture(false), onStopped: () => setEnLecture(false), onError: () => setEnLecture(false),
     });
   }, [langue]);

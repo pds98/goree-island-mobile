@@ -11,6 +11,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { AssistantVocal } from '@/assistant/AssistantVocal';
+import { PanneauLangue } from '@/composants/SelecteurLangue';
 import { FournisseurI18n } from '@/i18n';
 import { couleurs } from '@/theme';
 
@@ -42,6 +44,10 @@ export default function Racine() {
           <Stack.Screen name="identite" options={{ presentation: 'modal' }} />
           <Stack.Screen name="visite-3d" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         </Stack>
+        {/* Assistant vocal (bouton micro flottant + panneau d'écoute) */}
+        <AssistantVocal />
+        {/* Panneau des langues : dernier enfant → dessiné au-dessus de tout */}
+        <PanneauLangue />
       </FournisseurI18n>
     </QueryClientProvider>
   );

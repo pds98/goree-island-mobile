@@ -42,7 +42,11 @@ export function VideoAccueil({ video, photo, description }: {
   }, [status, reduireAnimations, opacite, lecteur]);
 
   return (
-    <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} accessible accessibilityRole="image" accessibilityLabel={description}>
+    // pointerEvents="none" : la vidéo est un décor. Sur iPhone, sa vue native
+    // pouvait passer AU-DESSUS des boutons de l'en-tête et capter les touchers
+    // (seul le bord gauche du bouton 🌐 réagissait).
+    <View style={[StyleSheet.absoluteFill, { overflow: 'hidden', zIndex: 0 }]} pointerEvents="none"
+      accessible accessibilityRole="image" accessibilityLabel={description}>
       <Image source={photo} contentFit="cover" contentPosition="top" style={StyleSheet.absoluteFill} />
       {!reduireAnimations && status !== 'error' ? (
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: opacite }]} pointerEvents="none">
@@ -52,7 +56,9 @@ export function VideoAccueil({ video, photo, description }: {
       ) : null}
       {/* Voile clair en haut : garde le logo et le titre lisibles quel que
           soit le cadrage de la vidéo (écrans larges, tablettes). */}
-      <Svg style={StyleSheet.absoluteFill} pointerEvents="none" preserveAspectRatio="none" viewBox="0 0 1 1">
+      {/* Enveloppe View : react-native-svg ignore parfois pointerEvents sur iOS */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Svg style={StyleSheet.absoluteFill} preserveAspectRatio="none" viewBox="0 0 1 1">
         <Defs>
           <LinearGradient id="voile" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor="#FFF4E2" stopOpacity={0.85} />
@@ -62,6 +68,7 @@ export function VideoAccueil({ video, photo, description }: {
         </Defs>
         <Rect x="0" y="0" width="1" height="1" fill="url(#voile)" />
       </Svg>
+      </View>
     </View>
   );
 }

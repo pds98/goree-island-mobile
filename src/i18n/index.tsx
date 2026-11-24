@@ -69,6 +69,9 @@ type ContexteI18n = {
   t: (c: Cles, variables?: Variables) => string;
   /** Vrai pour l'arabe : la mise en page est en miroir. */
   rtl: boolean;
+  /** Panneau de choix de la langue (dessiné par <PanneauLangue />, sans Modal native). */
+  selecteurOuvert: boolean;
+  setSelecteurOuvert: (o: boolean) => void;
 };
 const Contexte = createContext<ContexteI18n | null>(null);
 const CLE_STOCKAGE = 'goree.langue';
@@ -80,6 +83,7 @@ function langueSysteme(): Langue {
 
 export function FournisseurI18n({ children }: { children: ReactNode }) {
   const [langue, setLangueEtat] = useState<Langue>(langueSysteme);
+  const [selecteurOuvert, setSelecteurOuvert] = useState(false);
 
   // Recharge la langue mémorisée au démarrage.
   useEffect(() => {
@@ -96,13 +100,15 @@ export function FournisseurI18n({ children }: { children: ReactNode }) {
   const valeur = useMemo<ContexteI18n>(() => ({
     langue,
     setLangue,
+    selecteurOuvert,
+    setSelecteurOuvert,
     rtl: !!LANGUES.find((l) => l.code === langue)?.rtl,
     t: (c, variables) => {
       let texte = DICTIONNAIRES[langue][c] ?? fr[c];
       if (variables) for (const [k, v] of Object.entries(variables)) texte = texte.replace(`{${k}}`, String(v));
       return texte;
     },
-  }), [langue, setLangue]);
+  }), [langue, setLangue, selecteurOuvert]);
 
   return (
     <Contexte.Provider value={valeur}>
