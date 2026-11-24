@@ -112,3 +112,40 @@ export interface ErreurApi {
   code: string;
   message: string;
 }
+
+// --- Avis et suggestions des visiteurs -------------------------------------------
+
+export type TypeRetour = 'AVIS' | 'SUGGESTION' | 'PROBLEME';
+export type ThemeRetour = 'achat' | 'chaloupe' | 'visite' | 'application' | 'assistant';
+
+export interface NouveauRetour {
+  note: number;                                    // 1 → 5
+  type: TypeRetour;
+  notes_themes: Partial<Record<ThemeRetour, number>>;
+  etiquettes: string[];
+  commentaire: string;
+  prenom?: string;
+  langue: string;
+  billet_numero?: string;
+  contact?: string;
+  consentement_contact: boolean;
+}
+
+export interface RetourPublic {
+  id: string;
+  note: number;
+  type: TypeRetour;
+  commentaire: string;
+  prenom: string | null;
+  langue: string;
+  etiquettes: string[];
+  cree_le: string;
+}
+
+export interface ResumeRetours {
+  moyenne: number | null;
+  total: number;
+  repartition: Record<'1' | '2' | '3' | '4' | '5', number>;
+  themes: Partial<Record<ThemeRetour, number>>;
+  derniers: RetourPublic[];
+}

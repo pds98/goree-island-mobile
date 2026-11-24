@@ -98,6 +98,20 @@ export default function Accueil() {
                 <Texte style={{ fontSize: 13 }}>{t('horsLigne')}</Texte>
               </Pressable>
             </Link>
+
+            {/* Avis & suggestions */}
+            <Link href="/avis" asChild>
+              <Pressable accessibilityRole="link" style={{ minHeight: 60, borderRadius: rayon.m,
+                backgroundColor: couleurs.blanc, borderWidth: 1, borderColor: couleurs.bordure,
+                flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 10 }}>
+                <Text style={{ fontSize: 22, color: couleurs.ocre }}>★</Text>
+                <View style={{ flex: 1 }}>
+                  <Texte gras style={{ color: couleurs.encre }}>{t('donneTonAvis')}</Texte>
+                  <Texte style={{ fontSize: 12 }}>{t('donneTonAvisSous')}</Texte>
+                </View>
+                <Text style={{ fontSize: 18, color: couleurs.gris }}>›</Text>
+              </Pressable>
+            </Link>
           </View>
         </View>
       </ScrollView>

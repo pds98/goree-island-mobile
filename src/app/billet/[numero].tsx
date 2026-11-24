@@ -4,7 +4,7 @@
  * Entrée du site : report (1 fois, 7 jours) → nouveau QR, l'ancien révoqué.
  */
 import { useQuery } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -121,6 +121,9 @@ export default function DetailBillet() {
         fontSize: 12 }}>{estChaloupe ? t('scannerEmbarcadere') : t('scannerSite')}</Texte>
 
       {message ? <Bandeau ton={message.ton} texte={message.texte} /> : null}
+
+      {/* Après la visite : laisser un avis */}
+      <Bouton titre={`★ ${t('donneTonAvis')}`} variante="clair" onPress={() => router.push('/avis')} />
 
       {/* Chaloupe : tous les départs et arrivées du jour, avec accès au suivi en direct */}
       {estChaloupe ? <HorairesDuJour jour={billet.date_visite} rotationBillet={billet.rotation_aller_id} /> : null}

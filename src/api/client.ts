@@ -10,7 +10,8 @@ import { Platform } from 'react-native';
 import { DEMO_CIRCUITS, DEMO_PARTENAIRES } from '@/demo/donnees';
 
 import type {
-  Circuit, Commande, MoyenPaiement, NomPack, Partenaire, ReponseAudio, Rotation, SuiviChaloupe, Trajet,
+  Circuit, Commande, MoyenPaiement, NomPack, NouveauRetour, Partenaire, ReponseAudio, ResumeRetours, Rotation,
+  SuiviChaloupe, Trajet,
   Verification, Billet,
 } from './types';
 
@@ -150,3 +151,10 @@ export const reserver = (r: {
   numero: string; telephone: string; partenaire_id: string; description: string;
   montant: number; moyen_paiement: MoyenPaiement;
 }) => requete<{ reservation_id: string; statut: string; montant: number }>('/reservations', json(r));
+
+/** Avis, suggestion ou signalement (modéré avant toute publication). */
+export const envoyerRetour = (retour: NouveauRetour) =>
+  requete<{ id: string; statut: string }>('/retours', json(retour));
+
+/** Note moyenne, répartition des étoiles et derniers avis publiés. */
+export const resumeRetours = () => requete<ResumeRetours>('/retours/resume');
