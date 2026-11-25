@@ -88,6 +88,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "3914d131-e20c-44c6-be8a-432bfa68f074"
+      }
+    },
+    "owner": "popdotcom"
   }
 }
