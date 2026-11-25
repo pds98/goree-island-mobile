@@ -7,13 +7,13 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REMPLACER-PAR-L-ADRESSE-DU-SERVEUR"
+        "EXPO_PUBLIC_API_URL": "https://5gyvxu21voa0oyxc4v4bbkq5.34.71.254.119.sslip.io"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REMPLACER-PAR-L-ADRESSE-DU-SERVEUR"
+        "EXPO_PUBLIC_API_URL": "https://5gyvxu21voa0oyxc4v4bbkq5.34.71.254.119.sslip.io"
       }
     }
   },
