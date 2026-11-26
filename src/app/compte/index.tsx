@@ -27,17 +27,19 @@ import { couleurs, polices, rayon } from '@/theme';
 
 export default function EcranCompte() {
   const { compte, pret } = useCompte();
+  const [deconnecte, setDeconnecte] = useState(false);
   if (!pret) {
     return <Ecran defilable={false}><ActivityIndicator color={couleurs.terracotta} style={{ marginTop: 80 }} /></Ecran>;
   }
-  return compte ? <MonCompte /> : <Bienvenue />;
+  return compte ? <MonCompte onDeconnecte={() => setDeconnecte(true)} />
+    : <Bienvenue messageDepart={deconnecte ? 'deconnecteOk' : undefined} />;
 }
 
 // =====================================================================================
 // Non connecté : choix du profil, puis identification
 // =====================================================================================
 
-function Bienvenue() {
+function Bienvenue({ messageDepart }: { messageDepart?: Cles }) {
   const { t, langue } = useT();
   const { ouvrir } = useCompte();
   const [profil, setProfil] = useState<api.Profil | null>(null);
@@ -95,12 +97,16 @@ function Bienvenue() {
 
   const emailValide = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
   const formulaireValide = emailValide && motDePasse.length >= 8 && (mode === 'connexion' || nom.trim().length >= 2);
+  // Ce qui manque, dans l'ordre du formulaire (affiché sous les champs).
+  const raisonInvalide: Cles = mode === 'inscription' && nom.trim().length < 2 ? 'manqueNom'
+    : !emailValide ? 'manqueEmail' : 'manqueMotDePasse';
 
   // --- Étape 1 : qui es-tu ? (la connexion à un compte existant saute ce choix) ---
   if (!profil && mode === 'inscription') {
     return (
       <Ecran>
         <EnTete surtitre={t('compteSurtitre')} titre={t('quiEsTu')} />
+        {messageDepart ? <Bandeau ton="info" texte={t(messageDepart)} /> : null}
         <Texte>{t('quiEsTuSous')}</Texte>
 
         <ChoixProfil couleur={couleurs.ocean} fondIcone={couleurs.ocre} titre={t('jeVisite')} sous={t('jeVisiteSous')}
@@ -166,10 +172,16 @@ function Bienvenue() {
           autoComplete={mode === 'inscription' ? 'new-password' : 'current-password'}
           textContentType={mode === 'inscription' ? 'newPassword' : 'password'} maxLength={200}
           onSubmitEditing={() => { if (formulaireValide) void avecEmail(); }} />
-        {mode === 'inscription' ? <Texte style={{ fontSize: 12, color: couleurs.gris }}>{t('motDePasseRegle')}</Texte> : null}
+        {mode === 'inscription' ? (
+          <Texte style={{ fontSize: 12, color: motDePasse && motDePasse.length < 8 ? couleurs.terracottaFonce
+            : couleurs.gris }}>{t('motDePasseRegle')}</Texte>
+        ) : null}
       </View>
 
       {erreur ? <Bandeau ton="erreur" texte={erreur} /> : null}
+      {!formulaireValide && (email || motDePasse) && !(mode === 'inscription' && raisonInvalide === 'manqueMotDePasse') ? (
+        <Texte style={{ fontSize: 12, color: couleurs.terracottaFonce }}>{t(raisonInvalide)}</Texte>
+      ) : null}
 
       <Bouton titre={mode === 'connexion' ? t('seConnecter') : t('creerMonCompte')}
         variante={partenaire ? 'terracotta' : 'ocean'} chargement={envoi} desactive={!formulaireValide}
@@ -218,7 +230,7 @@ const STATUTS: Record<api.StatutCandidature, { libelle: Cles; fond: string; text
   REFUSEE: { libelle: 'statutRefusee', fond: '#FDE2E1', texte: '#8A1C1C' },
 };
 
-function MonCompte() {
+function MonCompte({ onDeconnecte }: { onDeconnecte: () => void }) {
   const { t } = useT();
   const { compte, synchroniser, fermer, supprimer, rafraichir } = useCompte();
   const [synchro, setSynchro] = useState<'idle' | 'encours' | number>('idle');
@@ -332,7 +344,7 @@ function MonCompte() {
 
       {erreur ? <Bandeau ton="erreur" texte={erreur} /> : null}
 
-      <Bouton titre={t('seDeconnecter')} variante="clair" onPress={() => void fermer().then(() => router.back())} />
+      <Bouton titre={t('seDeconnecter')} variante="clair" onPress={() => void fermer().then(onDeconnecte)} />
       <Pressable accessibilityRole="button" onPress={() => setSuppression(true)}
         style={{ alignSelf: 'center', minHeight: 44, justifyContent: 'center' }}>
         <Texte style={{ fontSize: 13, color: couleurs.rouge }}>{t('supprimerMonCompte')}</Texte>

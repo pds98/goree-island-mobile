@@ -21,7 +21,10 @@ export function Ecran({ children, fond = couleurs.sable, defilable = true, style
   const contenu = <View style={[{ padding: espace.xl, gap: espace.l }, style]}>{children}</View>;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: fond }} edges={['top']}>
-      {defilable ? <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>{contenu}</ScrollView>
+      {/* keyboardShouldPersistTaps : sur iPhone, sans ce réglage, le 1er toucher sur
+          un bouton ne fait que fermer le clavier (« j'appuie et rien ne se passe »). */}
+      {defilable ? <ScrollView contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag">{contenu}</ScrollView>
         : contenu}
     </SafeAreaView>
   );

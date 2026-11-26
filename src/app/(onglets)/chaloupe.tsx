@@ -1,78 +1,58 @@
 /**
- * PARCOURS 1 — Achat d'une traversée.
- * Tarif unique, nom + téléphone, AUCUNE pièce d'identité.
+ * PARCOURS 1 — La traversée Dakar ⇄ Gorée.
+ *
+ * Depuis le 29 octobre 2026, le billet de chaloupe est vendu par la billetterie
+ * OFFICIELLE du Port autonome de Dakar (dakargoree.sn) : c'est son QR code qui
+ * est scanné à l'embarquement. L'app ne vend donc pas ce billet (un billet
+ * émis par l'app serait refusé au quai) : le bouton ouvre la billetterie
+ * officielle dans l'app, et l'écran garde ce que le Port ne fait pas :
+ * horaires du jour, retards en direct, suivi de la chaloupe.
+ *
+ * Le jour où un partenariat de revente (API du Port) sera signé, l'achat
+ * direct pourra revenir ici : l'ancien parcours est dans l'historique Git
+ * (commit 48d1e5c, src/app/(onglets)/chaloupe.tsx).
  */
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import {
-  acheterChaloupe, aujourdHui, dateDakar, ErreurApiClient, heureDakar, listerRotations,
-} from '@/api/client';
-import type { MoyenPaiement, Trajet } from '@/api/types';
-import { Calendrier, libelleDate } from '@/composants/Calendrier';
-import { FeuilleConfirmation } from '@/composants/FeuilleConfirmation';
-import { MOYENS, MoyensPaiement } from '@/composants/MoyensPaiement';
-import {
-  Bandeau, Bouton, Champ, Compteur, Ecran, Etiquette, formaterFcfa, Frise, Segment, Texte, Titre,
-} from '@/composants/ui';
-import { confirmerIdentite } from '@/compte/biometrie';
+import { aujourdHui, dateDakar, heureDakar, listerRotations } from '@/api/client';
+import type { Rotation } from '@/api/types';
+import { Calendrier } from '@/composants/Calendrier';
+import { Bandeau, Bouton, Ecran, Etiquette, Frise, Texte, Titre } from '@/composants/ui';
 import { useT } from '@/i18n';
-import { enregistrerBillets } from '@/stockage/billets';
 import { couleurs, polices } from '@/theme';
 
-// Miroir de app/tarifs.py — VALEURS PROVISOIRES. Le montant final est
-// toujours celui calculé par le serveur (affiché après paiement).
-const PRIX_PAR_PASSAGER: Record<Trajet, number> = { ALLER_SIMPLE: 750, ALLER_RETOUR: 1_500 };
+/** Billetterie officielle de la Liaison maritime Dakar-Gorée (Port autonome de Dakar). */
+export const BILLETTERIE_OFFICIELLE = 'https://dakargoree.sn';
 
 export default function Chaloupe() {
   const { t } = useT();
-  // Paramètres envoyés par l'assistant vocal (« 2 billets aller-retour samedi »).
-  const p = useLocalSearchParams<{ passagers?: string; trajet?: Trajet; date?: string }>();
-  const [trajet, setTrajet] = useState<Trajet>(p.trajet ?? 'ALLER_RETOUR');
-  const [jour, setJour] = useState(p.date && p.date >= aujourdHui() ? p.date : aujourdHui());
-  const [rotationId, setRotationId] = useState<string | null>(null);
-  const [passagers, setPassagers] = useState(Math.min(10, Math.max(1, Number(p.passagers) || 1)));
-
-  // Nouvelle demande de l'assistant alors que l'écran est déjà ouvert : on
-  // ajuste l'état pendant le rendu (motif recommandé par React, sans effet).
-  const [derniersParams, setDerniersParams] = useState(p);
-  if (p.passagers !== derniersParams.passagers || p.trajet !== derniersParams.trajet || p.date !== derniersParams.date) {
-    setDerniersParams(p);
-    if (p.passagers) setPassagers(Math.min(10, Math.max(1, Number(p.passagers) || 1)));
-    if (p.trajet) setTrajet(p.trajet);
-    if (p.date && p.date >= aujourdHui()) { setJour(p.date); setRotationId(null); }
-  }
-  const [nom, setNom] = useState('');
-  const [telephone, setTelephone] = useState('+221 ');
-  const [moyen, setMoyen] = useState<MoyenPaiement>('WAVE');
-  const [confirmation, setConfirmation] = useState(false);   // feuille « Confirmer et payer »
+  const [jour, setJour] = useState(aujourdHui());
+  const [erreur, setErreur] = useState<string | null>(null);
 
   const rotations = useQuery({ queryKey: ['rotations', jour], queryFn: () => listerRotations(jour) });
-  const departs = (rotations.data ?? []).filter((r) => r.depart === 'Dakar'
-    && dateDakar(r.heure_prevue) === jour);
-  // Jours ayant au moins un départ publié depuis Dakar : un point dans le calendrier.
+  const departs = (rotations.data ?? []).filter((r) => r.depart === 'Dakar' && dateDakar(r.heure_prevue) === jour);
+  const retours = (rotations.data ?? []).filter((r) => r.depart !== 'Dakar' && dateDakar(r.heure_prevue) === jour);
   const joursAvecDeparts = new Set((rotations.data ?? [])
     .filter((r) => r.depart === 'Dakar').map((r) => dateDakar(r.heure_prevue)));
 
-  const achat = useMutation({
-    mutationFn: () => acheterChaloupe({
-      nom, telephone: telephone.replace(/\s/g, ''), date_visite: jour, trajet, passagers,
-      rotation_id: rotationId, moyen_paiement: moyen,
-    }),
-    onSettled: () => setConfirmation(false),
-    onSuccess: async (commande) => {
-      await enregistrerBillets(commande.billets.map((billet) => ({
-        billet, telephone: telephone.replace(/\s/g, ''), titulaire: nom,
-        enregistreLe: new Date().toISOString(),
-      })));
-      router.push({ pathname: '/billet/[numero]', params: { numero: commande.billets[0].numero } });
-    },
-  });
-
-  const formulaireValide = nom.trim().length >= 2 && telephone.replace(/\D/g, '').length >= 9;
+  async function ouvrirBilletterie() {
+    setErreur(null);
+    try {
+      // Navigateur intégré (SFSafariViewController / Custom Tabs) : le visiteur
+      // reste dans l'app, et le paiement se fait chez le Port, pas chez nous.
+      await WebBrowser.openBrowserAsync(BILLETTERIE_OFFICIELLE, {
+        toolbarColor: couleurs.ocean, controlsColor: couleurs.blanc,
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+      });
+    } catch {
+      setErreur(t('billetterieIndisponible'));
+    }
+  }
 
   return (
     <Ecran style={{ padding: 0, gap: 0 }}>
@@ -84,96 +64,63 @@ export default function Chaloupe() {
           <Titre taille={26} style={{ color: couleurs.blanc }}>{t('chaloupeTitre')}</Titre>
           <Texte style={{ color: couleurs.oceanClair, fontSize: 13 }}>Dakar ⇄ Gorée · ~20 min</Texte>
         </View>
-        <Etiquette texte={t('tarifUnique')} incline />
+        <Etiquette texte={t('enDirect')} incline />
       </View>
       <Frise />
 
-      <View style={{ padding: 20, gap: 16 }}>
-        <Segment<Trajet> valeur={trajet} onChange={setTrajet} options={[
-          { valeur: 'ALLER_RETOUR', libelle: t('allerRetour') },
-          { valeur: 'ALLER_SIMPLE', libelle: t('allerSimple') },
-        ]} />
+      <View style={{ padding: 20, gap: 18 }}>
+        {/* Billetterie officielle du Port */}
+        <View style={{ backgroundColor: couleurs.blanc, borderRadius: 20, padding: 16, gap: 10,
+          borderWidth: 1, borderColor: couleurs.bordure }}>
+          <Texte gras style={{ color: couleurs.encre, fontSize: 16 }}>{t('billetChaloupe')}</Texte>
+          <Texte style={{ fontSize: 13 }}>{t('billetterieOfficielleSous')}</Texte>
+          <Bouton titre={t('acheterSurSiteOfficiel')} variante="ocean" onPress={() => void ouvrirBilletterie()} />
+          <Texte style={{ fontSize: 11, color: couleurs.gris }}>{t('billetterieMention')}</Texte>
+        </View>
+        {erreur ? <Bandeau ton="erreur" texte={erreur} /> : null}
 
-        <Calendrier valeur={jour} onChange={(j) => { setJour(j); setRotationId(null); }}
-          libelle={t('dateTraversee')} joursMarques={joursAvecDeparts}
-          legendeMarque={t('departsPublies')} />
+        {/* Horaires en direct (ce que le Port n'affiche pas en temps réel) */}
+        <Calendrier valeur={jour} onChange={setJour} libelle={t('dateTraversee')}
+          joursMarques={joursAvecDeparts} legendeMarque={t('departsPublies')} />
 
         <View style={{ gap: 8 }}>
           <Texte gras>{t('departsDakar')}</Texte>
-          {departs.length === 0 ? (
-            <Texte style={{ fontSize: 13, color: couleurs.gris }}>
-              {t('horairesNonPublies')}
-            </Texte>
-          ) : (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {departs.map((r) => {
-                const actif = r.id === rotationId;
-                return (
-                  <Pressable key={r.id} accessibilityRole="radio" accessibilityState={{ selected: actif }}
-                    onPress={() => setRotationId(actif ? null : r.id)}
-                    style={{ width: 84, minHeight: 72, borderRadius: 16, alignItems: 'center',
-                      justifyContent: 'center', gap: 4, borderWidth: 1,
-                      borderColor: actif ? couleurs.ocean : couleurs.bordure,
-                      backgroundColor: actif ? couleurs.ocean : couleurs.blanc }}>
-                    <Text style={{ fontFamily: polices.titre, fontSize: 19,
-                      color: actif ? couleurs.blanc : couleurs.encre }}>{heureDakar(r.heure_prevue)}</Text>
-                    <Text style={{ fontFamily: polices.texteGras, fontSize: 11,
-                      color: actif ? couleurs.oceanClair : r.retard_minutes ? '#8A5A00' : couleurs.vert }}>
-                      {r.retard_minutes ? `+${r.retard_minutes} min` : t('aLHeure')}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+          {departs.length ? <Grille liste={departs} /> : (
+            <Texte style={{ fontSize: 13, color: couleurs.gris }}>{t('horairesNonPublies')}</Texte>
           )}
         </View>
-
-        <Compteur libelle={t('passagers')} valeur={passagers} min={1} max={10} onChange={setPassagers}
-          sous={`${formaterFcfa(PRIX_PAR_PASSAGER[trajet])} ${t('parPersonne')} · ${t('tarifUnique').toLowerCase()}`} />
-
-        <Champ libelle={t('nomPrenom')} value={nom} onChangeText={setNom} autoComplete="name"
-          textContentType="name" />
-        <Champ libelle={t('telephone')} value={telephone} onChangeText={setTelephone}
-          keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" />
-
-        <MoyensPaiement valeur={moyen} onChange={setMoyen} />
-
-        <Texte style={{ fontSize: 12, color: couleurs.gris }}>{t('aucuneIdentite')}</Texte>
-
-        {achat.error ? <Bandeau ton="erreur" texte={(achat.error as ErreurApiClient).message} /> : null}
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <View>
-            <Texte style={{ fontSize: 12 }}>{t('total')}</Texte>
-            <Titre taille={20}>{formaterFcfa(PRIX_PAR_PASSAGER[trajet] * passagers)}</Titre>
+        {retours.length ? (
+          <View style={{ gap: 8 }}>
+            <Texte gras>{t('goreeDakar')}</Texte>
+            <Grille liste={retours} />
           </View>
-          <Bouton titre={t('payer')} variante="ocean" style={{ flex: 1 }}
-            chargement={achat.isPending} desactive={!formulaireValide} onPress={() => setConfirmation(true)} />
-        </View>
+        ) : null}
+        <Texte style={{ fontSize: 12, color: couleurs.gris }}>{t('toucherPourSuivre')}</Texte>
       </View>
-
-      {/* Récapitulatif avant paiement : rien n'est payé sans confirmation */}
-      <FeuilleConfirmation visible={confirmation} ton="ocean" titre={t('confirmerPaiement')}
-        lignes={[
-          { libelle: t('recapTrajet'), valeur: `Dakar ⇄ Gorée · ${trajet === 'ALLER_RETOUR' ? t('allerRetour') : t('allerSimple')}` },
-          { libelle: t('recapDate'), valeur: libelleDate(jour, t) },
-          { libelle: t('recapDepart'), valeur: departs.find((r) => r.id === rotationId)?.nom ?? t('tousDeparts') },
-          { libelle: t('passagers'), valeur: `${passagers} × ${formaterFcfa(PRIX_PAR_PASSAGER[trajet])}` },
-          { libelle: t('recapTitulaire'), valeur: nom.trim() },
-          { libelle: t('recapMoyen'), valeur: nomMoyen(moyen) },
-        ]}
-        total={formaterFcfa(PRIX_PAR_PASSAGER[trajet] * passagers)}
-        message={t('paiementSecurise', { moyen: nomMoyen(moyen) })}
-        libelleConfirmer={t('confirmerEtPayer')} libelleAnnuler={t('modifier')} chargement={achat.isPending}
-        onAnnuler={() => setConfirmation(false)} onConfirmer={async () => {
-          // Face ID (si activé dans « Mon compte ») avant de lancer le paiement.
-          if (await confirmerIdentite(t('faceIdPaiement'), t('annuler'))) achat.mutate();
-        }} />
     </Ecran>
   );
 }
 
-/** Nom affiché d'un moyen de paiement (« Wave », « Orange Money »…). */
-function nomMoyen(api: MoyenPaiement): string {
-  return MOYENS.find((m) => m.api === api)?.nom ?? api;
+/** Grille d'horaires : un toucher ouvre le suivi en direct de la chaloupe. */
+function Grille({ liste }: { liste: Rotation[] }) {
+  const { t } = useT();
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      {liste.map((r) => (
+        <Pressable key={r.id} accessibilityRole="button" onPress={() => router.push(`/suivi/${r.id}`)}
+          accessibilityLabel={`${heureDakar(r.heure_prevue)} · ${r.annulee ? t('statutAnnulee')
+            : r.retard_minutes ? `+${r.retard_minutes} min` : t('aLHeure')} · ${t('suivreDirect')}`}
+          style={{ width: 84, minHeight: 66, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+            gap: 3, borderWidth: 1, borderColor: couleurs.bordure, backgroundColor: couleurs.blanc,
+            opacity: r.annulee ? 0.5 : 1 }}>
+          <Text style={{ fontFamily: polices.titre, fontSize: 19, color: couleurs.encre,
+            textDecorationLine: r.annulee ? 'line-through' : 'none' }}>{heureDakar(r.heure_prevue)}</Text>
+          <Text style={{ fontFamily: polices.texteGras, fontSize: 11,
+            color: r.annulee ? couleurs.rouge : r.retard_minutes ? '#8A5A00' : couleurs.vert }}>
+            {r.annulee ? t('statutAnnulee') : r.retard_minutes ? `+${r.retard_minutes} min` : t('aLHeure')}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
 }

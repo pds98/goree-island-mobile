@@ -15,6 +15,7 @@ import type { MoyenPaiement, NomPack } from '@/api/types';
 import {
   IconeCasque, IconeCircuit, IconeCoche, IconeCouches, IconeGuide, IconeHotel, IconeResto, IconeAppareil,
 } from '@/composants/icones';
+import { ActivitesIle } from '@/composants/ActivitesIle';
 import { Calendrier, libelleDate } from '@/composants/Calendrier';
 import { FeuilleConfirmation } from '@/composants/FeuilleConfirmation';
 import { MOYENS, MoyensPaiement } from '@/composants/MoyensPaiement';
@@ -183,6 +184,9 @@ export default function Ile() {
           // Face ID (si activé dans « Mon compte ») avant de lancer le paiement.
           if (await confirmerIdentite(t('faceIdPaiement'), t('annuler'))) achat.mutate();
         }} />
+
+        {/* Activités à faire une fois sur l'île */}
+        <ActivitesIle />
 
         <Titre taille={19}>{t('surPlace')}</Titre>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
